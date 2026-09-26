@@ -1,0 +1,406 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Japan Travel Phrasebook</title>
+    
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Google Fonts: Inter for English/Romaji, Noto Sans JP for Japanese characters -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        jp: ['Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        japan: {
+                            red: '#BC002D', // Official Japan flag red
+                            bg: '#F9FAFB'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom scrollbar hiding for category filters on mobile */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Smooth transitions for interactive elements */
+        .card-transition {
+            transition: all 0.2s ease-in-out;
+        }
+        .card-transition:active {
+            transform: scale(0.98);
+        }
+
+        /* Toast notification styling */
+        #toast {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 30px;
+        }
+    </style>
+</head>
+<body class="bg-japan-bg text-gray-800 antialiased min-h-screen pb-20">
+
+    <!-- Sticky Header -->
+    <header class="sticky top-0 z-40 bg-white shadow-sm pt-safe-top">
+        <div class="px-4 py-4 md:px-6 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <!-- Red circle motif (Japan flag inspiration) -->
+                    <div class="w-6 h-6 rounded-full bg-japan-red flex-shrink-0"></div>
+                    <h1 class="text-xl font-bold tracking-tight text-gray-900">Nihongo Pal</h1>
+                </div>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors" 
+                    placeholder="Search in English, Romaji, or Japanese..."
+                >
+            </div>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="border-t border-gray-100">
+            <div class="px-4 max-w-3xl mx-auto flex overflow-x-auto hide-scrollbar py-3 gap-2" id="categoryFilterContainer">
+                <!-- Buttons will be injected here via JS -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area for Phrases -->
+    <main class="px-4 py-6 md:px-6 max-w-3xl mx-auto" id="phraseContainer">
+        <!-- Phrase cards will be injected here via JS -->
+    </main>
+
+    <!-- Empty State / No Results (Hidden by default) -->
+    <div id="noResults" class="hidden flex-col items-center justify-center py-12 px-4 text-center">
+        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900">No phrases found</h3>
+        <p class="text-gray-500 mt-1">Try adjusting your search or selecting a different category.</p>
+    </div>
+
+    <!-- Toast Notification (for errors like missing speech support) -->
+    <div id="toast" class="fixed left-1/2 transform -translate-x-1/2 bottom-0 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg z-50 text-sm font-medium flex items-center gap-2">
+        <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <span id="toastMessage">Notification message</span>
+    </div>
+
+    <script>
+        // Data Store for Phrases
+        const phrases = [
+            // GREETINGS & BASICS
+            { id: 1, category: 'Greetings', english: 'Hello', japanese: 'こんにちは', romaji: 'Konnichiwa' },
+            { id: 2, category: 'Greetings', english: 'Thank you (polite)', japanese: 'ありがとうございます', romaji: 'Arigatou gozaimasu' },
+            { id: 3, category: 'Greetings', english: 'Excuse me / I\'m sorry', japanese: 'すみません', romaji: 'Sumimasen' },
+            { id: 4, category: 'Greetings', english: 'Good morning', japanese: 'おはようございます', romaji: 'Ohayou gozaimasu' },
+            { id: 5, category: 'Greetings', english: 'Good evening', japanese: 'こんばんは', romaji: 'Konbanwa' },
+            { id: 6, category: 'Greetings', english: 'Yes / No', japanese: 'はい / いいえ', romaji: 'Hai / Iie' },
+            { id: 7, category: 'Greetings', english: 'Nice to meet you', japanese: 'はじめまして', romaji: 'Hajimemashite' },
+            { id: 8, category: 'Greetings', english: 'Do you speak English?', japanese: '英語を話せますか？', romaji: 'Eigo o hanasemasu ka?' },
+
+            // TRANSPORTATION
+            { id: 9, category: 'Transportation', english: 'Where is the train station?', japanese: '駅はどこですか？', romaji: 'Eki wa doko desu ka?' },
+            { id: 10, category: 'Transportation', english: 'Does this train go to [Tokyo]?', japanese: 'この電車は[東京]に行きますか？', romaji: 'Kono densha wa [Tokyo] ni ikimasu ka?' },
+            { id: 11, category: 'Transportation', english: 'How much is the ticket?', japanese: '切符はいくらですか？', romaji: 'Kippu wa ikura desu ka?' },
+            { id: 12, category: 'Transportation', english: 'I\'d like to go here', japanese: 'ここに行きたいです', romaji: 'Koko ni ikitai desu' },
+            { id: 13, category: 'Transportation', english: 'Stop here, please', japanese: 'ここで止めてください', romaji: 'Koko de tomete kudasai' },
+
+            // DINING
+            { id: 14, category: 'Dining', english: 'Do you have an English menu?', japanese: '英語のメニューはありますか？', romaji: 'Eigo no menyuu wa arimasu ka?' },
+            { id: 15, category: 'Dining', english: 'Water, please', japanese: 'お水をお願いします', romaji: 'Omizu o onegaishimasu' },
+            { id: 16, category: 'Dining', english: 'What do you recommend?', japanese: 'おすすめは何ですか？', romaji: 'Osusume wa nan desu ka?' },
+            { id: 17, category: 'Dining', english: 'It\'s delicious', japanese: 'おいしいです', romaji: 'Oishii desu' },
+            { id: 18, category: 'Dining', english: 'Check, please', japanese: 'お会計をお願いします', romaji: 'Okaikei o onegaishimasu' },
+            { id: 19, category: 'Dining', english: 'I have an allergy to [peanuts]', japanese: '[ピーナッツ]のアレルギーがあります', romaji: '[Piinattsu] no arerugii ga arimasu' },
+
+            // SHOPPING
+            { id: 20, category: 'Shopping', english: 'How much is this?', japanese: 'これはいくらですか？', romaji: 'Kore wa ikura desu ka?' },
+            { id: 21, category: 'Shopping', english: 'Do you take credit cards?', japanese: 'クレジットカードは使えますか？', romaji: 'Kurejitto kaado wa tsukaemasu ka?' },
+            { id: 22, category: 'Shopping', english: 'I\'ll take this', japanese: 'これをください', romaji: 'Kore o kudasai' },
+            { id: 23, category: 'Shopping', english: 'Can I try this on?', japanese: '試着してもいいですか？', romaji: 'Shichaku shite mo ii desu ka?' },
+            { id: 24, category: 'Shopping', english: 'Do you have a larger/smaller size?', japanese: '大きい/小さいサイズはありますか？', romaji: 'Ookii/chiisai saizu wa arimasu ka?' },
+
+            // EMERGENCIES
+            { id: 25, category: 'Emergencies', english: 'Help!', japanese: '助けて！', romaji: 'Tasukete!' },
+            { id: 26, category: 'Emergencies', english: 'Call an ambulance!', japanese: '救急車を呼んでください！', romaji: 'Kyuukyuusha o yonde kudasai!' },
+            { id: 27, category: 'Emergencies', english: 'Where is the hospital?', japanese: '病院はどこですか？', romaji: 'Byouin wa doko desu ka?' },
+            { id: 28, category: 'Emergencies', english: 'I feel sick', japanese: '気分が悪いです', romaji: 'Kibun ga warui desu' },
+            { id: 29, category: 'Emergencies', english: 'I lost my passport', japanese: 'パスポートをなくしました', romaji: 'Pasupooto o nakushimashita' }
+        ];
+
+        // State
+        let currentCategory = 'All';
+        let searchQuery = '';
+
+        // DOM Elements
+        const phraseContainer = document.getElementById('phraseContainer');
+        const categoryFilterContainer = document.getElementById('categoryFilterContainer');
+        const searchInput = document.getElementById('searchInput');
+        const noResultsMsg = document.getElementById('noResults');
+
+        // Extract unique categories
+        const categories = ['All', ...new Set(phrases.map(p => p.category))];
+
+        // Initialize App
+        function init() {
+            renderCategories();
+            renderPhrases();
+            setupEventListeners();
+        }
+
+        // Render Category Filter Buttons
+        function renderCategories() {
+            categoryFilterContainer.innerHTML = categories.map(cat => `
+                <button 
+                    onclick="setCategory('${cat}')"
+                    class="px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200 border ${
+                        currentCategory === cat 
+                            ? 'bg-gray-900 text-white border-gray-900' 
+                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }"
+                >
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        // Render Phrase Cards based on filters
+        function renderPhrases() {
+            // Filter logic
+            const filteredPhrases = phrases.filter(phrase => {
+                const matchesCategory = currentCategory === 'All' || phrase.category === currentCategory;
+                
+                const searchLower = searchQuery.toLowerCase();
+                const matchesSearch = phrase.english.toLowerCase().includes(searchLower) ||
+                                      phrase.romaji.toLowerCase().includes(searchLower) ||
+                                      phrase.japanese.includes(searchLower);
+                
+                return matchesCategory && matchesSearch;
+            });
+
+            // Toggle No Results view
+            if (filteredPhrases.length === 0) {
+                phraseContainer.innerHTML = '';
+                noResultsMsg.classList.remove('hidden');
+                noResultsMsg.classList.add('flex');
+            } else {
+                noResultsMsg.classList.add('hidden');
+                noResultsMsg.classList.remove('flex');
+                
+                phraseContainer.innerHTML = filteredPhrases.map(phrase => `
+                    <div class="bg-white rounded-2xl p-5 mb-4 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 card-transition">
+                        <div class="flex justify-between items-start gap-4">
+                            <div class="flex-1">
+                                <span class="inline-block px-2 py-1 bg-gray-100 text-xs font-semibold text-gray-500 rounded-md mb-2 uppercase tracking-wider">
+                                    ${phrase.category}
+                                </span>
+                                <h3 class="text-lg font-bold text-gray-900 mb-3">${phrase.english}</h3>
+                                <p class="text-2xl font-jp font-medium text-blue-900 mb-1">${phrase.japanese}</p>
+                                <p class="text-sm text-gray-500 italic">${phrase.romaji}</p>
+                            </div>
+                            
+                            <button 
+                                onclick="playSpeech(this, '${phrase.japanese.replace(/'/g, "\\'")}')"
+                                class="flex-shrink-0 w-12 h-12 bg-blue-50 hover:bg-blue-100 rounded-full flex items-center justify-center text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                aria-label="Play pronunciation"
+                            >
+                                <!-- Play Icon -->
+                                <svg class="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Update category state
+        window.setCategory = function(cat) {
+            currentCategory = cat;
+            renderCategories(); // Re-render to update active styling
+            renderPhrases();
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                renderPhrases();
+            });
+        }
+
+        // Global references to prevent garbage-collection bugs in Chromium
+        let activeUtterance = null;
+        let activeAudio = null;
+        let japaneseVoice = null;
+
+        // Preload Japanese voice when available
+        function loadJapaneseVoices() {
+            if ('speechSynthesis' in window) {
+                const voices = window.speechSynthesis.getVoices();
+                japaneseVoice = voices.find(v => v.lang === 'ja-JP' || v.lang === 'ja' || v.lang.startsWith('ja')) || null;
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            loadJapaneseVoices();
+            window.speechSynthesis.onvoiceschanged = loadJapaneseVoices;
+        }
+
+        // Reset button appearance helper
+        function resetButton(btnElement, originalHTML) {
+            if (!btnElement) return;
+            btnElement.innerHTML = originalHTML;
+            btnElement.classList.remove('bg-blue-200', 'scale-95');
+        }
+
+        // Custom Toast function (replacing alert)
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Fallback audio player when SpeechSynthesis is unavailable or errors out
+        function playFallbackAudio(btnElement, text, originalHTML) {
+            try {
+                if (activeAudio) {
+                    activeAudio.pause();
+                    activeAudio = null;
+                }
+                const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ja&q=${encodeURIComponent(text)}`;
+                const audio = new Audio(audioUrl);
+                activeAudio = audio;
+
+                audio.onended = () => {
+                    resetButton(btnElement, originalHTML);
+                    activeAudio = null;
+                };
+
+                audio.onerror = () => {
+                    resetButton(btnElement, originalHTML);
+                    activeAudio = null;
+                    showToast("Pronunciation audio could not be loaded.");
+                };
+
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        resetButton(btnElement, originalHTML);
+                        activeAudio = null;
+                        showToast("Audio playback was blocked by the browser.");
+                    });
+                }
+            } catch (err) {
+                resetButton(btnElement, originalHTML);
+                showToast("Audio playback unavailable.");
+            }
+        }
+
+        // Handle Text-to-Speech
+        window.playSpeech = function(btnElement, text) {
+            // Stop any currently playing audio fallback
+            if (activeAudio) {
+                activeAudio.pause();
+                activeAudio = null;
+            }
+
+            // Visual feedback on the button
+            const originalHTML = btnElement.innerHTML;
+            btnElement.classList.add('bg-blue-200', 'scale-95');
+            btnElement.innerHTML = `
+                <svg class="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+            `;
+
+            // If SpeechSynthesis is not supported, immediately use audio fallback
+            if (!('speechSynthesis' in window)) {
+                playFallbackAudio(btnElement, text, originalHTML);
+                return;
+            }
+
+            // Safely resume synth in case browser paused it
+            if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+            }
+
+            // Cancel any previous speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ja-JP';
+            utterance.rate = 0.85; // Slower rate for clear pronunciation
+
+            if (japaneseVoice) {
+                utterance.voice = japaneseVoice;
+            }
+
+            // Keep reference to prevent garbage collection during playback
+            activeUtterance = utterance;
+
+            utterance.onend = () => {
+                resetButton(btnElement, originalHTML);
+                activeUtterance = null;
+            };
+
+            utterance.onerror = (e) => {
+                // Ignore standard intentional cancellation events
+                if (e.error === 'interrupted' || e.error === 'canceled') {
+                    resetButton(btnElement, originalHTML);
+                    activeUtterance = null;
+                    return;
+                }
+
+                // If native TTS fails (missing language pack or browser limitation), switch to fallback
+                activeUtterance = null;
+                playFallbackAudio(btnElement, text, originalHTML);
+            };
+
+            // Speak utterance
+            window.speechSynthesis.speak(utterance);
+        };
+
+        // Run initialization when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
