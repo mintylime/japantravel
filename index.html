@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kotoba Builder - Japanese Sentence Matrix & Guide</title>
+    <title>Nihongo Pal & Kansai Field Guide</title>
     
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts for crisp typography & kanji legibility -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -25,7 +22,7 @@
                         sumi: '#18181b', // Ink black
                         vermilion: '#e11d48', // Japanese torii crimson
                         washi: '#fcfbf9', // Rice paper off-white
-                        tatami: '#f4f4f0'
+                        kansai: '#2563eb', // Indigo blue for local vibe
                     }
                 }
             }
@@ -65,7 +62,6 @@
             transform: translate(-50%, 0);
         }
 
-        /* Smooth tab transitions */
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease-in-out;
@@ -77,11 +73,28 @@
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Styling for details/summary accordions */
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        details[open] summary ~ * {
+            animation: slideDown 0.3s ease-in-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chevron { transition: transform 0.3s; }
+        details[open] .chevron { transform: rotate(180deg); }
     </style>
 </head>
-<body class="bg-washi text-zinc-900 font-sans min-h-screen antialiased flex flex-col justify-between selection:bg-rose-100 selection:text-rose-900 pb-10">
+<body class="bg-washi text-zinc-900 font-sans min-h-screen antialiased flex flex-col pb-12 selection:bg-rose-100 selection:text-rose-900">
 
-    <header class="sticky top-0 z-30 bg-washi/95 backdrop-blur-md border-b border-zinc-200 shadow-sm">
+    <header class="sticky top-0 z-40 bg-washi/95 backdrop-blur-md border-b border-zinc-200 shadow-sm">
         <div class="max-w-4xl mx-auto px-4 py-3 sm:px-6 flex flex-col gap-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -89,29 +102,28 @@
                         構
                     </span>
                     <div>
-                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-zinc-900 leading-tight">Kotoba Builder</h1>
-                        <p class="text-xs text-zinc-500 font-medium">Japanese Travel Matrix</p>
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-zinc-900 leading-tight">Nihongo Pal</h1>
+                        <p class="text-[10px] sm:text-xs text-zinc-500 font-medium">Kotoba & Kansai Integration Guide</p>
                     </div>
                 </div>
 
-                <!-- Audio Speed Toggle -->
                 <div class="flex items-center gap-2">
-                    <button id="speedToggle" onclick="toggleSpeechSpeed()" class="px-2.5 py-1 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 transition-colors">
-                        Speed: <span id="speedLabel" class="text-vermilion font-bold">0.85x</span>
+                    <button onclick="toggleSpeechSpeed()" class="px-2.5 py-1 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 transition-colors shadow-sm">
+                        Spd: <span id="speedLabel" class="text-vermilion font-bold">0.85x</span>
                     </button>
                 </div>
             </div>
 
-            <!-- App View Navigation (Builder vs Culture) -->
+            <!-- Tab Navigation -->
             <div class="flex p-1 bg-zinc-100 rounded-xl border border-zinc-200">
                 <button onclick="switchTab('builder')" id="nav-builder" class="flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-zinc-900">
                     Builder
                 </button>
                 <button onclick="switchTab('phrasebook')" id="nav-phrasebook" class="flex-1 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
-                    Phrases
+                    Phrasebook
                 </button>
                 <button onclick="switchTab('culture')" id="nav-culture" class="flex-1 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
-                    Culture
+                    Kansai Guide
                 </button>
             </div>
         </div>
@@ -119,369 +131,309 @@
 
     <main class="max-w-4xl mx-auto px-4 py-5 sm:px-6 w-full flex-1">
 
-        <!-- ==============================
-             TAB 1: SENTENCE BUILDER
-             ============================== -->
-        <div id="view-builder" class="tab-content active space-y-6">
-            
-            <!-- Pattern Switcher Carousel -->
+        <div id="view-builder" class="tab-content active space-y-5">
+            <!-- Pattern Carousel -->
             <div class="-mx-4 px-4 sm:mx-0 sm:px-0">
-                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 pt-1" id="patternTabs">
-                    <!-- Dynamically populated pattern buttons -->
-                </div>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 pt-1" id="patternTabs"></div>
             </div>
 
             <!-- Live Assembly Card -->
-            <section class="bg-white rounded-3xl p-5 sm:p-7 border border-zinc-200 shadow-sm relative overflow-hidden transition-all">
+            <section class="bg-white rounded-3xl p-5 border border-zinc-200 shadow-sm relative overflow-hidden transition-all">
                 <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-vermilion via-rose-500 to-amber-500"></div>
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div class="flex items-center gap-2">
-                        <span id="patternCategoryTag" class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-50 text-vermilion border border-rose-100">
-                            Location Pattern
-                        </span>
-                        <span id="patternGrammarRule" class="text-xs font-mono text-zinc-400">
-                            [X] + はどこですか？
-                        </span>
+                        <span id="patternCategoryTag" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-50 text-vermilion border border-rose-100"></span>
+                        <span id="patternGrammarRule" class="text-xs font-mono text-zinc-400"></span>
                     </div>
 
                     <div class="flex items-center gap-2 self-end sm:self-auto">
-                        <button onclick="copyGeneratedPhrase()" class="p-2 text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors border border-transparent hover:border-zinc-200" title="Copy Japanese text">
+                        <button onclick="copyGeneratedPhrase()" class="p-2 text-zinc-500 hover:bg-zinc-100 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors border border-transparent">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                             <span>Copy</span>
                         </button>
-                        <button onclick="speakCurrentSentence()" id="mainPlayBtn" class="px-4 py-2 bg-vermilion hover:bg-rose-700 text-white rounded-xl font-semibold text-sm flex items-center gap-2 shadow-md shadow-rose-900/10 active:scale-95 transition-all">
+                        <button onclick="speakCurrentSentence()" id="mainPlayBtn" class="px-4 py-2 bg-vermilion hover:bg-rose-700 text-white rounded-xl font-semibold text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all">
                             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                             <span>Listen</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Dynamic Large Display Box -->
-                <div class="bg-zinc-50 rounded-2xl p-5 border border-zinc-100 space-y-3">
-                    <div id="fullSentenceJapanese" class="text-2xl sm:text-3xl md:text-4xl font-jp font-bold text-zinc-900 leading-snug tracking-tight"></div>
-                    <div id="fullSentenceRomaji" class="text-sm sm:text-base font-medium text-zinc-500 tracking-wide"></div>
+                <div class="bg-zinc-50 rounded-2xl p-4 sm:p-5 border border-zinc-100 space-y-3">
+                    <div id="fullSentenceJapanese" class="text-2xl sm:text-3xl font-jp font-bold text-zinc-900 leading-snug tracking-tight"></div>
+                    <div id="fullSentenceRomaji" class="text-sm font-medium text-zinc-500 tracking-wide"></div>
                     <div class="pt-2 border-t border-zinc-200/60 flex items-center justify-between">
-                        <p id="fullSentenceEnglish" class="text-sm sm:text-base font-semibold text-zinc-700"></p>
-                        <span class="text-[11px] text-zinc-400 italic">Tap vocab below to swap</span>
+                        <p id="fullSentenceEnglish" class="text-sm font-semibold text-zinc-700"></p>
                     </div>
                 </div>
 
-                <!-- Structural Breakdown -->
-                <div class="mt-4 pt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <span class="text-zinc-400 font-medium">Breakdown:</span>
-                    <span id="pillSlot" class="px-2.5 py-1 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-mono font-bold"></span>
+                <div class="mt-4 pt-3 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs">
+                    <span class="text-zinc-400 font-medium">Structure:</span>
+                    <span id="pillSlot" class="px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 font-mono font-bold"></span>
                     <span class="text-zinc-300">+</span>
-                    <span id="pillParticle" class="px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-700 border border-zinc-200 font-mono"></span>
+                    <span id="pillParticle" class="px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-zinc-200 font-mono"></span>
                     <span class="text-zinc-300">+</span>
-                    <span id="pillStem" class="px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-700 border border-zinc-200 font-mono"></span>
+                    <span id="pillStem" class="px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-zinc-200 font-mono"></span>
                 </div>
             </section>
 
             <!-- Vocabulary Selection -->
-            <section class="space-y-3">
+            <section class="space-y-3 pt-2">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-sm sm:text-base font-bold text-zinc-900 flex items-center gap-2">
-                            <span>Vocab for</span>
-                            <span id="activeSlotName" class="text-xs bg-zinc-200 text-zinc-800 font-mono px-2 py-0.5 rounded-full">[Place]</span>
-                        </h2>
-                    </div>
-                    <div class="w-32 sm:w-48">
-                        <input type="text" id="vocabSearch" oninput="filterVocabList()" placeholder="Filter..." class="w-full text-xs px-3 py-1.5 rounded-lg border border-zinc-200 bg-white focus:outline-none focus:ring-1 focus:ring-zinc-800"/>
-                    </div>
+                    <h2 class="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                        <span>Vocab for</span>
+                        <span id="activeSlotName" class="text-xs bg-zinc-200 text-zinc-800 font-mono px-2 py-0.5 rounded-full"></span>
+                    </h2>
+                    <input type="text" id="vocabSearch" oninput="filterVocabList()" placeholder="Search vocab..." class="w-32 sm:w-48 text-xs px-3 py-1.5 rounded-lg border border-zinc-200 bg-white focus:outline-none focus:ring-1 focus:ring-zinc-800"/>
                 </div>
                 <div id="vocabGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
             </section>
 
             <!-- Grammar Note -->
-            <section class="bg-zinc-100/70 rounded-2xl p-4 sm:p-5 border border-zinc-200/80">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-600 mb-2 flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Grammar & Usage Note
-                </h3>
-                <p id="grammarNoteContent" class="text-xs sm:text-sm text-zinc-600 leading-relaxed"></p>
+            <section class="bg-zinc-100/70 rounded-2xl p-4 border border-zinc-200/80">
+                <h3 class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Usage Note</h3>
+                <p id="grammarNoteContent" class="text-xs text-zinc-600 leading-relaxed"></p>
             </section>
         </div>
 
-        <!-- ==============================
-             TAB 2: PHRASEBOOK
-             ============================== -->
-        <div id="view-phrasebook" class="tab-content space-y-5">
-            <div class="mb-2">
-                <h2 class="text-xl font-bold text-zinc-900">Essential Phrasebook</h2>
-                <p class="text-sm text-zinc-500 mt-1">Quick, ready-to-use phrases for common travel situations.</p>
-            </div>
-            
-            <!-- Search Bar -->
+        <div id="view-phrasebook" class="tab-content space-y-4">
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <input type="text" id="phraseSearchInput" class="block w-full pl-9 pr-3 py-2.5 border border-zinc-200 rounded-xl leading-5 bg-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-vermilion focus:border-vermilion sm:text-sm transition-colors shadow-sm text-zinc-900" placeholder="Search in English, Romaji, or Japanese...">
+                <input type="text" id="phraseSearchInput" class="block w-full pl-9 pr-3 py-2.5 border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-vermilion text-sm shadow-sm" placeholder="Search phrases (English, Romaji, Kana)...">
             </div>
 
-            <!-- Category Filters -->
-            <div class="flex overflow-x-auto no-scrollbar py-1 gap-2 -mx-4 px-4 sm:mx-0 sm:px-0" id="phraseCategoryContainer">
-                <!-- Dynamically populated categories -->
-            </div>
-
-            <!-- Phrases List -->
-            <div id="phraseListContainer" class="space-y-3">
-                <!-- Dynamically populated phrases -->
-            </div>
+            <div class="flex overflow-x-auto no-scrollbar py-1 gap-2 -mx-4 px-4 sm:mx-0 sm:px-0" id="phraseCategoryContainer"></div>
             
-            <!-- Empty State -->
-            <div id="phraseNoResults" class="hidden flex-col items-center justify-center py-10 px-4 text-center bg-zinc-50/50 rounded-2xl border border-zinc-200 border-dashed">
-                <svg class="w-10 h-10 text-zinc-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div id="phraseListContainer" class="space-y-2.5"></div>
+            
+            <div id="phraseNoResults" class="hidden flex-col items-center justify-center py-10 px-4 text-center bg-zinc-50 rounded-2xl border border-zinc-200 border-dashed">
                 <p class="text-sm font-medium text-zinc-600">No phrases found</p>
-                <p class="text-xs text-zinc-400 mt-1">Try a different search term or category.</p>
             </div>
         </div>
 
-        <!-- ==============================
-             TAB 3: CULTURE & CONNECTION
-             ============================== -->
-        <div id="view-culture" class="tab-content space-y-6">
-            
-            <div class="mb-2">
-                <h2 class="text-xl font-bold text-zinc-900">Sensei's Survival Guide</h2>
-                <p class="text-sm text-zinc-500 mt-1">Learning a language is learning a culture. Use these tips to blend in, make friends, and eat exceptionally well.</p>
+        <div id="view-culture" class="tab-content space-y-5">
+            <div class="mb-4">
+                <h2 class="text-xl font-bold text-zinc-900 tracking-tight">Kansai Integration Guide</h2>
+                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">You aren't just a tourist; you want to blend in. Learn the mindset, the dialect, and the unspoken rules of Osaka and the wider Kansai region.</p>
             </div>
 
-            <!-- The Art of Delicious -->
-            <section class="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 to-orange-500"></div>
-                <h3 class="text-lg font-bold text-zinc-900 mb-3 flex items-center gap-2">
-                    <span class="text-xl">🤤</span> The Magic of "Delicious"
-                </h3>
-                <p class="text-sm text-zinc-600 mb-5">These two words are the simplest, most effective tools you have for connecting with locals over food. Use them enthusiastically!</p>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="bg-orange-50/50 rounded-2xl p-4 border border-orange-100">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h4 class="font-jp font-bold text-xl text-zinc-900">美味しい</h4>
-                                <p class="text-sm text-orange-700 font-medium italic">Oishii (oh-ee-shee)</p>
-                            </div>
-                            <button onclick="speakWord('美味しい')" class="w-8 h-8 flex items-center justify-center bg-white rounded-full text-zinc-700 shadow-sm border border-zinc-200 hover:bg-zinc-100 transition-colors"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
-                        </div>
-                        <p class="text-xs text-zinc-600 mt-2"><strong>The Universal Standard.</strong> Polite and acceptable anywhere, from a street vendor to a high-end Michelin restaurant.</p>
+            <!-- Accordion 1: The Kansai Mindset -->
+            <details class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden group" open>
+                <summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg">🏯</div>
+                        <h3 class="font-bold text-sm text-zinc-900">The Kansai Mindset</h3>
                     </div>
-                    <div class="bg-amber-50/50 rounded-2xl p-4 border border-amber-100">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h4 class="font-jp font-bold text-xl text-zinc-900">旨い</h4>
-                                <p class="text-sm text-amber-700 font-medium italic">Umai (oo-my)</p>
-                            </div>
-                            <button onclick="speakWord('旨い')" class="w-8 h-8 flex items-center justify-center bg-white rounded-full text-zinc-700 shadow-sm border border-zinc-200 hover:bg-zinc-100 transition-colors"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
-                        </div>
-                        <p class="text-xs text-zinc-600 mt-2"><strong>Casual & Punchy.</strong> Think "Yum!" or "Man, this is good!". High-energy, widely used in casual stalls, and carries a friendly vibe that locals respond warmly to.</p>
+                    <svg class="chevron w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="p-4 border-t border-zinc-100 space-y-4">
+                    <p class="text-sm text-zinc-600">Osaka was historically <em>tenka no daidokoro</em> (the nation's kitchen)—a city run by merchants, not samurai. Because of this, Osaka runs on warmth, banter, and directness rather than strict formality.</p>
+                    
+                    <div class="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                        <h4 class="text-xs font-bold text-zinc-800 mb-2">The Golden Rule: Meiwaku o kakenai</h4>
+                        <p class="text-xs text-zinc-600">This means <strong>"don't cause trouble for others."</strong> Politeness here is about spatial awareness. Keep voices down on trains, take your rubbish home (bins are rare), and never take phone calls on public transit.</p>
                     </div>
-                </div>
-            </section>
 
-            <!-- Solo Travel Tactics -->
-            <section class="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-                <h3 class="text-lg font-bold text-zinc-900 mb-3 flex items-center gap-2">
-                    <span class="text-xl">🚶</span> Solo Travel Tactics: Eateries
-                </h3>
-                <p class="text-sm text-zinc-600 mb-4">Navigating the city solo means you have unique opportunities to naturally blend in and make friends.</p>
-                
-                <div class="space-y-4">
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-sm font-bold">1</div>
-                        <div>
-                            <h4 class="font-bold text-sm text-zinc-900">Target Tachinomi (Standing Bars)</h4>
-                            <p class="text-xs text-zinc-600 mt-1">These small, standing-only pubs are scattered throughout cities (especially around stations or in Osaka's Namba/Shinsekai). Tailor-made for solo patrons. You stand at a counter, order small plates, and naturally end up rubbing shoulders with locals.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-sm font-bold">2</div>
-                        <div>
-                            <h4 class="font-bold text-sm text-zinc-900">Always Opt for the Counter (Kaunta)</h4>
-                            <p class="text-xs text-zinc-600 mt-1">Whether at a ramen shop, yakitori joint, or okonomiyaki grill, choose counter seating. Watching the chef cook gives you a front-row view, and throwing out an enthusiastic "Umai!" after your first bite is an instant icebreaker.</p>
-                        </div>
-                    </div>
+                    <ul class="text-xs text-zinc-600 space-y-2">
+                        <li class="flex gap-2"><span class="text-blue-500">▹</span> <strong>Escalators:</strong> In Osaka, you stand on the <strong>RIGHT</strong> and walk on the left. (Tokyo does the opposite).</li>
+                        <li class="flex gap-2"><span class="text-blue-500">▹</span> <strong>Tipping:</strong> Never tip. It causes deep confusion. Show appreciation by finishing your food and saying <em>Gochisōsama deshita</em>.</li>
+                        <li class="flex gap-2"><span class="text-blue-500">▹</span> <strong>Entering Homes:</strong> Say <em>"O-jama shimasu"</em> (I am intruding) as you step into the genkan.</li>
+                    </ul>
                 </div>
+            </details>
 
-                <div class="mt-5 bg-zinc-50 rounded-xl p-4 border border-zinc-100">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">Essential Navigation Phrases</h4>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-zinc-200">
+            <!-- Accordion 2: Kansai-ben (Dialect) -->
+            <details class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden group">
+                <summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg">🗣️</div>
+                        <h3 class="font-bold text-sm text-zinc-900">Speak Local: Kansai-ben</h3>
+                    </div>
+                    <svg class="chevron w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="p-4 border-t border-zinc-100">
+                    <p class="text-xs text-zinc-600 mb-4">Osaka speech is faster and more playful. Use these with shopkeepers or at bars to instantly win smiles. (Switch to standard polite Japanese for hotel staff or monks).</p>
+                    
+                    <div class="space-y-2">
+                        <!-- Dialect Item 1 -->
+                        <div class="flex items-center justify-between p-2.5 bg-amber-50/30 rounded-xl border border-amber-100/50">
                             <div>
-                                <span class="font-jp font-bold text-sm">これ、ください</span>
-                                <span class="text-xs text-zinc-500 ml-2">Kore, kudasai (This one, please - while pointing)</span>
+                                <span class="font-jp font-bold text-zinc-900 block">おおきに (Ōkini)</span>
+                                <span class="text-[11px] text-zinc-500">Means "Thank you" (Standard: Arigatou). Charming with older vendors.</span>
                             </div>
-                            <button onclick="speakWord('これ、ください')" class="p-1.5 bg-zinc-100 rounded-md hover:bg-zinc-200 transition-colors"><svg class="w-3 h-3 fill-current text-zinc-700" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                            <button onclick="speakJapaneseWord('おおきに')" class="p-2 bg-white rounded-full shadow-sm text-amber-600 hover:bg-amber-50 transition-colors"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
                         </div>
-                        <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-zinc-200">
+                        <!-- Dialect Item 2 -->
+                        <div class="flex items-center justify-between p-2.5 bg-amber-50/30 rounded-xl border border-amber-100/50">
                             <div>
-                                <span class="font-jp font-bold text-sm">お会計、ください</span>
-                                <span class="text-xs text-zinc-500 ml-2">O-kaikei, kudasai (Check, please)</span>
+                                <span class="font-jp font-bold text-zinc-900 block">めっちゃ (Meccha)</span>
+                                <span class="text-[11px] text-zinc-500">Means "Very / Super". e.g., <em>Meccha oishii!</em> (Super tasty!)</span>
                             </div>
-                            <button onclick="speakWord('お会計、ください')" class="p-1.5 bg-zinc-100 rounded-md hover:bg-zinc-200 transition-colors"><svg class="w-3 h-3 fill-current text-zinc-700" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                            <button onclick="speakJapaneseWord('めっちゃ')" class="p-2 bg-white rounded-full shadow-sm text-amber-600 hover:bg-amber-50 transition-colors"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                        </div>
+                        <!-- Dialect Item 3 -->
+                        <div class="flex items-center justify-between p-2.5 bg-amber-50/30 rounded-xl border border-amber-100/50">
+                            <div>
+                                <span class="font-jp font-bold text-zinc-900 block">ほんま？ (Honma?)</span>
+                                <span class="text-[11px] text-zinc-500">Means "Really?". Great reaction word. <em>Honma ni ōkini!</em> (Thanks so much).</span>
+                            </div>
+                            <button onclick="speakJapaneseWord('ほんま')" class="p-2 bg-white rounded-full shadow-sm text-amber-600 hover:bg-amber-50 transition-colors"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                        </div>
+                        <!-- Dialect Item 4 -->
+                        <div class="flex items-center justify-between p-2.5 bg-amber-50/30 rounded-xl border border-amber-100/50">
+                            <div>
+                                <span class="font-jp font-bold text-zinc-900 block">なんでやねん！ (Nande ya nen!)</span>
+                                <span class="text-[11px] text-zinc-500">"Why on earth?!" The ultimate comedy retort. Use only when joking around.</span>
+                            </div>
+                            <button onclick="speakJapaneseWord('なんでやねん')" class="p-2 bg-white rounded-full shadow-sm text-amber-600 hover:bg-amber-50 transition-colors"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
                         </div>
                     </div>
                 </div>
-            </section>
+            </details>
 
-            <!-- Golden Etiquette -->
-            <section class="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-                <h3 class="text-lg font-bold text-zinc-900 mb-3 flex items-center gap-2">
-                    <span class="text-xl">🍵</span> Golden Dining Etiquette
-                </h3>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                    <div class="flex justify-between items-center bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
-                        <div>
-                            <span class="font-jp font-bold text-zinc-900 block">いただきます</span>
-                            <span class="text-xs text-zinc-500 italic">Itadakimasu (I humbly receive)</span>
-                        </div>
-                        <button onclick="speakWord('いただきます')" class="p-2 bg-white rounded-full shadow-sm hover:bg-zinc-50"><svg class="w-3.5 h-3.5 fill-current text-zinc-700" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+            <!-- Accordion 3: Kuidaore (Eating Culture) -->
+            <details class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden group">
+                <summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg">🥢</div>
+                        <h3 class="font-bold text-sm text-zinc-900">Kuidaore: Eat Until You Drop</h3>
                     </div>
-                    <div class="flex justify-between items-center bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
-                        <div>
-                            <span class="font-jp font-bold text-zinc-900 block">ごちそうさまでした</span>
-                            <span class="text-xs text-zinc-500 italic">Gochisousama deshita (Thank you for the meal)</span>
+                    <svg class="chevron w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="p-4 border-t border-zinc-100 space-y-4">
+                    <p class="text-xs text-zinc-600">Osaka is famous for cheap, hearty, social food like Okonomiyaki, Takoyaki, and Kushikatsu (fried skewers—<strong>never double-dip in the communal sauce!</strong>).</p>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-rose-50 rounded-xl p-3 border border-rose-100 text-center">
+                            <span class="block font-jp font-bold text-rose-700 text-sm mb-1">美味しい (Oishii)</span>
+                            <span class="text-[10px] text-zinc-600">Standard, polite "Delicious". Safe anywhere.</span>
                         </div>
-                        <button onclick="speakWord('ごちそうさまでした')" class="p-2 bg-white rounded-full shadow-sm hover:bg-zinc-50"><svg class="w-3.5 h-3.5 fill-current text-zinc-700" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                        <div class="bg-amber-50 rounded-xl p-3 border border-amber-100 text-center">
+                            <span class="block font-jp font-bold text-amber-700 text-sm mb-1">旨い (Umai)</span>
+                            <span class="text-[10px] text-zinc-600">Casual "Yum!". Punchy and loved by Osakans.</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                        <h4 class="text-xs font-bold text-zinc-800 mb-2">Tachinomi (Standing Bars) & Counters</h4>
+                        <p class="text-[11px] text-zinc-600 mb-2">Tachinomi (立ち飲み) are standing-only pubs tailor-made for solo patrons. It is the easiest place to naturally rub shoulders with locals. Always opt for counter seating (kaunta).</p>
+                        <div class="flex items-center justify-between p-2 bg-white rounded border border-zinc-200 mt-2">
+                            <div class="text-[11px]">
+                                <span class="font-bold text-zinc-900">おすすめは何ですか？</span><br>
+                                <span class="text-zinc-500">Osusume wa nan desu ka? (What do you recommend?)</span>
+                            </div>
+                            <button onclick="speakJapaneseWord('おすすめは何ですか？')" class="p-1.5 bg-zinc-100 rounded text-zinc-600 hover:bg-zinc-200"><svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                        </div>
+                    </div>
+                    
+                    <ul class="text-[11px] text-zinc-600 space-y-1.5">
+                        <li>• <strong>Oshibori:</strong> Use the wet towel for your hands only. Never wipe your face or neck.</li>
+                        <li>• <strong>Chopsticks:</strong> Never pass food chopstick-to-chopstick. Never stick them vertically into rice (funeral associations).</li>
+                        <li>• <strong>Slurping:</strong> Slurping noodles is entirely fine and compliments the chef!</li>
+                    </ul>
+                </div>
+            </details>
+
+            <!-- Accordion 4: Temples, Shrines & Baths -->
+            <details class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden group">
+                <summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">⛩️</div>
+                        <h3 class="font-bold text-sm text-zinc-900">Shrines, Temples & Sentō</h3>
+                    </div>
+                    <svg class="chevron w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="p-4 border-t border-zinc-100 space-y-4">
+                    
+                    <div class="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                        <h4 class="text-xs font-bold text-zinc-800 mb-1">Shrines (Shinto) vs Temples (Buddhist)</h4>
+                        <p class="text-[11px] text-zinc-600 mb-2">Shrines have <em>Torii</em> gates. Temples have guardian statues and pagodas. Walk on the side of the central path (the center is for the kami/spirits).</p>
+                        <ul class="text-[11px] text-zinc-600 space-y-1">
+                            <li>• <strong>Shrine Prayer:</strong> Bow twice, clap twice, pray, bow once (Ni-rei, ni-hakushu, ichi-rei).</li>
+                            <li>• <strong>Temple Prayer:</strong> Put palms together quietly. <strong>Do not clap.</strong></li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                        <h4 class="text-xs font-bold text-zinc-800 mb-1">Sentō & Onsen (Public Baths)</h4>
+                        <p class="text-[11px] text-zinc-600 mb-2">Blue curtains (男) for men, red (女) for women. Swimwear is not allowed.</p>
+                        <ul class="text-[11px] text-zinc-600 space-y-1.5 mb-2">
+                            <li>1. Wash thoroughly at the seated shower stations <em>before</em> getting into the bath.</li>
+                            <li>2. Tie long hair up. Rinse off all soap.</li>
+                            <li>3. Your small towel <strong>never</strong> goes in the water. Fold it on your head or leave it on the edge.</li>
+                        </ul>
+                        <div class="flex items-center justify-between p-2 bg-white rounded border border-zinc-200 mt-2">
+                            <div class="text-[11px]">
+                                <span class="font-bold text-zinc-900">タトゥー大丈夫ですか？</span><br>
+                                <span class="text-zinc-500">Tatū daijōbu desu ka? (Are tattoos OK?)</span>
+                            </div>
+                            <button onclick="speakJapaneseWord('タトゥー大丈夫ですか？')" class="p-1.5 bg-zinc-100 rounded text-zinc-600 hover:bg-zinc-200"><svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                        </div>
                     </div>
                 </div>
-
-                <ul class="text-xs sm:text-sm text-zinc-600 space-y-3">
-                    <li class="flex items-start gap-2.5">
-                        <span class="text-emerald-500 mt-0.5 text-lg leading-none">•</span> 
-                        <span><strong>Chopsticks (Ohashi):</strong> Never stick them vertically into your rice (it resembles a funeral ritual). Always rest them horizontally on a chopstick rest or across your bowl.</span>
-                    </li>
-                    <li class="flex items-start gap-2.5">
-                        <span class="text-emerald-500 mt-0.5 text-lg leading-none">•</span> 
-                        <span><strong>Passing Food:</strong> Never pass food from chopstick to chopstick. Place it on a small plate instead.</span>
-                    </li>
-                    <li class="flex items-start gap-2.5">
-                        <span class="text-emerald-500 mt-0.5 text-lg leading-none">•</span> 
-                        <span><strong>Oshibori (Wet Towel):</strong> Use it to clean your hands before eating, but strictly avoid wiping your face or neck with it.</span>
-                    </li>
-                    <li class="flex items-start gap-2.5">
-                        <span class="text-emerald-500 mt-0.5 text-lg leading-none">•</span> 
-                        <span><strong>Slurping is Good!</strong> Slurping noodles (like ramen or soba) is entirely acceptable. It cools the noodles down and compliments the chef!</span>
-                    </li>
-                </ul>
-            </section>
+            </details>
         </div>
 
     </main>
 
-    <!-- Toast Notification -->
     <div id="toastNotice" class="fixed bottom-6 left-1/2 z-50 bg-zinc-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 border border-zinc-700">
         <span id="toastIcon">✓</span>
         <span id="toastMsg">Copied phrase to clipboard</span>
     </div>
 
     <script>
-        // Tab Switching Logic
-        function switchTab(tabId) {
-            const tabs = ['builder', 'phrasebook', 'culture'];
-            tabs.forEach(t => {
-                const navBtn = document.getElementById(`nav-${t}`);
-                const view = document.getElementById(`view-${t}`);
-                
-                if (t === tabId) {
-                    navBtn.className = 'flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-zinc-900';
-                    view.classList.add('active');
-                } else {
-                    navBtn.className = 'flex-1 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700';
-                    view.classList.remove('active');
-                }
-            });
-        }
-
-        // Sentence Formulas Data
+        // --- Data: Sentence Patterns ---
         const sentencePatterns = [
             {
                 id: 'location', label: 'Where is...?', rule: '[Place] はどこですか？', category: 'Navigation', slotType: 'Place',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'Where is ',
-                suffixKanji: 'はどこですか？', suffixRomaji: ' wa doko desu ka?', suffixEn: '?',
-                particle: 'は (wa)', stem: 'どこですか (doko desu ka)',
-                note: '「どこですか」is the universal inquiry for location. The particle 「は」marks the place you are seeking.',
-                vocabKey: 'places'
+                prefixKanji: '', prefixRomaji: '', prefixEn: 'Where is ', suffixKanji: 'はどこですか？', suffixRomaji: ' wa doko desu ka?', suffixEn: '?',
+                particle: 'は (wa)', stem: 'どこですか (doko desu ka)', note: '「どこですか」is the universal inquiry for location.', vocabKey: 'places'
             },
             {
                 id: 'please_give', label: 'Please give me...', rule: '[Item] をください', category: 'Dining & Shops', slotType: 'Item',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'Please give me ',
-                suffixKanji: 'をください。', suffixRomaji: ' o kudasai.', suffixEn: ', please.',
-                particle: 'を (o)', stem: 'ください (kudasai)',
-                note: 'Use 「〜をください」when requesting tangible things like water, a receipt, or a menu.',
-                vocabKey: 'items'
+                prefixKanji: '', prefixRomaji: '', prefixEn: 'Please give me ', suffixKanji: 'をください。', suffixRomaji: ' o kudasai.', suffixEn: ', please.',
+                particle: 'を (o)', stem: 'ください (kudasai)', note: 'Use when requesting tangible things like water or a menu.', vocabKey: 'items'
             },
             {
                 id: 'do_you_have', label: 'Do you have...?', rule: '[Item] はありますか？', category: 'Inquiries', slotType: 'Service',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'Do you have ',
-                suffixKanji: 'はありますか？', suffixRomaji: ' wa arimasu ka?', suffixEn: '?',
-                particle: 'は (wa)', stem: 'ありますか (arimasu ka)',
-                note: '「ありますか」inquiries whether an inanimate item or service is available (e.g., Wi-Fi, English menu).',
-                vocabKey: 'services'
+                prefixKanji: '', prefixRomaji: '', prefixEn: 'Do you have ', suffixKanji: 'はありますか？', suffixRomaji: ' wa arimasu ka?', suffixEn: '?',
+                particle: 'は (wa)', stem: 'ありますか (arimasu ka)', note: 'Inquiries whether an item/service is available.', vocabKey: 'services'
             },
             {
-                id: 'transit_to', label: 'Does this go to...?', rule: 'この電車は [Dest] に行きますか？', category: 'Trains & Buses', slotType: 'Destination',
-                prefixKanji: 'この電車は', prefixRomaji: 'Kono densha wa ', prefixEn: 'Does this train go to ',
-                suffixKanji: 'に行きますか？', suffixRomaji: ' ni ikimasu ka?', suffixEn: '?',
-                particle: 'に (ni: direction)', stem: '行きますか (ikimasu ka)',
-                note: '「に行きますか」asks if the train/bus travels to that destination.',
-                vocabKey: 'destinations'
+                id: 'transit_to', label: 'Goes to...?', rule: 'この電車は [Dest] に行きますか？', category: 'Trains', slotType: 'Destination',
+                prefixKanji: 'この電車は', prefixRomaji: 'Kono densha wa ', prefixEn: 'Does this go to ', suffixKanji: 'に行きますか？', suffixRomaji: ' ni ikimasu ka?', suffixEn: '?',
+                particle: 'に (ni)', stem: '行きますか (ikimasu ka)', note: 'Asks if the transport travels to that destination.', vocabKey: 'destinations'
             },
             {
                 id: 'permission', label: 'May I... here?', rule: 'ここで [Action] もいいですか？', category: 'Etiquette', slotType: 'Action',
-                prefixKanji: 'ここで', prefixRomaji: 'Koko de ', prefixEn: 'May I ',
-                suffixKanji: 'もいいですか？', suffixRomaji: ' mo ii desu ka?', suffixEn: ' here?',
-                particle: 'で (loc) / も (also)', stem: 'いいですか (ii desu ka)',
-                note: 'The 〜てもいいですか construct asks polite permission. Important for photography and seating.',
-                vocabKey: 'actions'
-            },
-            {
-                id: 'how_much', label: 'How much is...?', rule: '[Item] はいくらですか？', category: 'Shopping', slotType: 'Product',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'How much is ',
-                suffixKanji: 'はいくらですか？', suffixRomaji: ' wa ikura desu ka?', suffixEn: '?',
-                particle: 'は (wa)', stem: 'いくらですか (ikura desu ka)',
-                note: '「いくらですか」asks price. Point at an item and say 「これはいくらですか」(How much is this?).',
-                vocabKey: 'products'
+                prefixKanji: 'ここで', prefixRomaji: 'Koko de ', prefixEn: 'May I ', suffixKanji: 'もいいですか？', suffixRomaji: ' mo ii desu ka?', suffixEn: ' here?',
+                particle: 'で / も', stem: 'いいですか (ii desu ka)', note: 'Asks polite permission (e.g., photography, seating).', vocabKey: 'actions'
             },
             {
                 id: 'want_to_go', label: 'I want to go to...', rule: '[Place] に行きたいんですが', category: 'Getting About', slotType: 'Location',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'I want to go to ',
-                suffixKanji: 'に行きたいんですが。', suffixRomaji: ' ni ikitain desu ga.', suffixEn: ', can you help?',
-                particle: 'に (ni: direction)', stem: '行きたいんですが (ikitain desu ga)',
-                note: 'A polite way to ask for directions or instruct a taxi driver. The trailing 「...んですが」(but...) softens the request.',
-                vocabKey: 'destinations'
+                prefixKanji: '', prefixRomaji: '', prefixEn: 'I want to go to ', suffixKanji: 'に行きたいんですが。', suffixRomaji: ' ni ikitain desu ga.', suffixEn: ', can you help?',
+                particle: 'に (ni)', stem: '行きたいんですが', note: 'A polite way to ask for directions or instruct a taxi driver.', vocabKey: 'destinations'
             },
             {
-                id: 'dietary', label: 'I cannot eat...', rule: '[Food] は食べられません', category: 'Food & Dining', slotType: 'Food',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'I cannot eat ',
-                suffixKanji: 'は食べられません。', suffixRomaji: ' wa taberaremasen.', suffixEn: '.',
-                particle: 'は (wa)', stem: '食べられません (taberaremasen)',
-                note: 'Crucial for communicating allergies or dietary choices to restaurant staff.',
-                vocabKey: 'foods'
+                id: 'dietary', label: 'I cannot eat...', rule: '[Food] は食べられません', category: 'Dietary', slotType: 'Food',
+                prefixKanji: '', prefixRomaji: '', prefixEn: 'I cannot eat ', suffixKanji: 'は食べられません。', suffixRomaji: ' wa taberaremasen.', suffixEn: '.',
+                particle: 'は (wa)', stem: '食べられません', note: 'Crucial for communicating allergies to restaurant staff.', vocabKey: 'foods'
             },
             {
                 id: 'origin', label: 'I am from...', rule: '[Country] から来ました', category: 'Introductions', slotType: 'Origin',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'I am from ',
-                suffixKanji: 'から来ました。', suffixRomaji: ' kara kimashita.', suffixEn: '.',
-                particle: 'から (kara: from)', stem: '来ました (kimashita)',
-                note: 'The standard way to tell locals where you are visiting from. A fantastic conversation starter!',
-                vocabKey: 'origins'
+                prefixKanji: '', prefixRomaji: '', prefixEn: 'I am from ', suffixKanji: 'から来ました。', suffixRomaji: ' kara kimashita.', suffixEn: '.',
+                particle: 'から (kara)', stem: '来ました (kimashita)', note: 'The standard way to tell locals where you are visiting from.', vocabKey: 'origins'
             },
             {
                 id: 'likes', label: 'I love...', rule: '[Topic] が大好きです', category: 'Making Friends', slotType: 'Hobby',
-                prefixKanji: '', prefixRomaji: '', prefixEn: 'I absolutely love ',
-                suffixKanji: 'が大好きです。', suffixRomaji: ' ga daisuki desu.', suffixEn: '!',
-                particle: 'が (ga)', stem: '大好きです (daisuki desu)',
-                note: 'Use this to express enthusiasm for Japanese culture, food, or hobbies. Locals love it!',
-                vocabKey: 'hobbies'
+                prefixKanji: '', prefixRomaji: '', prefixEn: 'I absolutely love ', suffixKanji: 'が大好きです。', suffixRomaji: ' ga daisuki desu.', suffixEn: '!',
+                particle: 'が (ga)', stem: '大好きです (daisuki)', note: 'Express enthusiasm for culture/food. Locals love it!', vocabKey: 'hobbies'
             }
         ];
 
+        // --- Data: Vocabulary ---
         const vocabularyPool = {
             places: [
                 { kanji: 'お手洗い', romaji: 'Otearai', en: 'the restroom / toilet', tag: 'Essential' },
@@ -492,7 +444,6 @@
                 { kanji: '切符売り場', romaji: 'Kippu uriba', en: 'the ticket machine', tag: 'Transit' },
                 { kanji: '改札口', romaji: 'Kaisatsuguchi', en: 'the ticket gate', tag: 'Transit' },
                 { kanji: 'コインロッカー', romaji: 'Koin rokkaa', en: 'the coin lockers', tag: 'Luggage' },
-                { kanji: 'コンビニ', romaji: 'Konbini', en: 'the convenience store', tag: 'Everyday' }
             ],
             items: [
                 { kanji: 'お水', romaji: 'Omizu', en: 'water (cold/tap)', tag: 'Dining' },
@@ -506,10 +457,9 @@
                 { kanji: '免税', romaji: 'Menzei', en: 'tax-free shopping', tag: 'Shopping' }
             ],
             destinations: [
-                { kanji: '新宿駅', romaji: 'Shinjuku eki', en: 'Shinjuku Station', tag: 'Tokyo Hub' },
-                { kanji: '東京駅', romaji: 'Tokyo eki', en: 'Tokyo Station', tag: 'Bullet Train' },
+                { kanji: '難波駅', romaji: 'Namba eki', en: 'Namba Station', tag: 'Osaka Hub' },
                 { kanji: '京都', romaji: 'Kyoto', en: 'Kyoto', tag: 'Destination' },
-                { kanji: '大阪', romaji: 'Osaka', en: 'Osaka', tag: 'Destination' },
+                { kanji: '神戸', romaji: 'Kobe', en: 'Kobe', tag: 'Destination' },
                 { kanji: 'このホテル', romaji: 'Kono hoteru', en: 'this hotel (show map)', tag: 'Accommodation' }
             ],
             actions: [
@@ -517,17 +467,11 @@
                 { kanji: '座って', romaji: 'suwatte', en: 'sit down', tag: 'Comfort' },
                 { kanji: 'クレジットカードを使って', romaji: 'kurejitto kaado o tsukatte', en: 'pay with credit card', tag: 'Payment' }
             ],
-            products: [
-                { kanji: 'これ', romaji: 'Kore', en: 'this one (near me)', tag: 'Pointer' },
-                { kanji: 'それ', romaji: 'Sore', en: 'that one (near you)', tag: 'Pointer' },
-                { kanji: 'この切符', romaji: 'Kono kippu', en: 'this ticket', tag: 'Transit' }
-            ],
             foods: [
                 { kanji: '豚肉', romaji: 'Butaniku', en: 'pork', tag: 'Meat' },
-                { kanji: 'お肉', romaji: 'Oniku', en: 'meat (in general)', tag: 'Meat' },
                 { kanji: '魚介類', romaji: 'Gyokairui', en: 'seafood', tag: 'Seafood' },
                 { kanji: 'ピーナッツ', romaji: 'Piinattsu', en: 'peanuts', tag: 'Nut Allergy' },
-                { kanji: '小麦', romaji: 'Komugi', en: 'wheat / gluten', tag: 'Allergy' }
+                { kanji: '出汁', romaji: 'Dashi', en: 'fish stock (Dashi)', tag: 'Hidden Fish' }
             ],
             origins: [
                 { kanji: 'アメリカ', romaji: 'Amerika', en: 'the US', tag: 'North America' },
@@ -537,150 +481,90 @@
             ],
             hobbies: [
                 { kanji: '日本食', romaji: 'Nihonshoku', en: 'Japanese food', tag: 'Culture' },
-                { kanji: 'アニメ', romaji: 'Anime', en: 'Anime', tag: 'Pop Culture' },
+                { kanji: 'お好み焼き', romaji: 'Okonomiyaki', en: 'Okonomiyaki', tag: 'Osaka Food' },
                 { kanji: '温泉', romaji: 'Onsen', en: 'Hot springs', tag: 'Travel' },
                 { kanji: 'お酒', romaji: 'Osake', en: 'Sake / drinking', tag: 'Social' }
             ]
         };
 
-        // ==========================================
-        // Phrasebook Data & State
-        // ==========================================
+        // --- Data: Phrasebook ---
         const staticPhrases = [
             { id: 1, category: 'Greetings', english: 'Hello', japanese: 'こんにちは', romaji: 'Konnichiwa' },
             { id: 2, category: 'Greetings', english: 'Thank you (polite)', japanese: 'ありがとうございます', romaji: 'Arigatou gozaimasu' },
             { id: 3, category: 'Greetings', english: 'Excuse me / I\'m sorry', japanese: 'すみません', romaji: 'Sumimasen' },
-            { id: 4, category: 'Greetings', english: 'Good morning', japanese: 'おはようございます', romaji: 'Ohayou gozaimasu' },
-            { id: 5, category: 'Greetings', english: 'Good evening', japanese: 'こんばんは', romaji: 'Konbanwa' },
-            { id: 6, category: 'Greetings', english: 'Yes / No', japanese: 'はい / いいえ', romaji: 'Hai / Iie' },
             { id: 7, category: 'Greetings', english: 'Nice to meet you', japanese: 'はじめまして', romaji: 'Hajimemashite' },
-            { id: 8, category: 'Greetings', english: 'Do you speak English?', japanese: '英語を話せますか？', romaji: 'Eigo o hanasemasu ka?' },
+            { id: 8, category: 'Greetings', english: 'I am intruding (entering home)', japanese: 'お邪魔します', romaji: 'O-jama shimasu' },
 
             { id: 9, category: 'Transport', english: 'Where is the train station?', japanese: '駅はどこですか？', romaji: 'Eki wa doko desu ka?' },
-            { id: 10, category: 'Transport', english: 'Does this train go to Tokyo?', japanese: 'この電車は東京に行きますか？', romaji: 'Kono densha wa Tokyo ni ikimasu ka?' },
+            { id: 10, category: 'Transport', english: 'Does this train stop at...?', japanese: 'この電車は...に止まりますか？', romaji: 'Kono densha wa... ni tomarimasu ka?' },
             { id: 11, category: 'Transport', english: 'How much is the ticket?', japanese: '切符はいくらですか？', romaji: 'Kippu wa ikura desu ka?' },
-            { id: 12, category: 'Transport', english: 'I\'d like to go here', japanese: 'ここに行きたいです', romaji: 'Koko ni ikitai desu' },
 
             { id: 14, category: 'Dining', english: 'Do you have an English menu?', japanese: '英語のメニューはありますか？', romaji: 'Eigo no menyuu wa arimasu ka?' },
-            { id: 15, category: 'Dining', english: 'Water, please', japanese: 'お水をお願いします', romaji: 'Omizu o onegaishimasu' },
             { id: 16, category: 'Dining', english: 'What do you recommend?', japanese: 'おすすめは何ですか？', romaji: 'Osusume wa nan desu ka?' },
+            { id: 17, category: 'Dining', english: 'Thank you for the meal (after)', japanese: 'ごちそうさまでした', romaji: 'Gochisousama deshita' },
             { id: 18, category: 'Dining', english: 'Check, please', japanese: 'お会計をお願いします', romaji: 'Okaikei o onegaishimasu' },
 
             { id: 20, category: 'Shopping', english: 'How much is this?', japanese: 'これはいくらですか？', romaji: 'Kore wa ikura desu ka?' },
             { id: 21, category: 'Shopping', english: 'Do you take credit cards?', japanese: 'クレジットカードは使えますか？', romaji: 'Kurejitto kaado wa tsukaemasu ka?' },
-            { id: 22, category: 'Shopping', english: 'I\'ll take this', japanese: 'これをください', romaji: 'Kore o kudasai' },
-
+            
             { id: 25, category: 'Emergency', english: 'Help!', japanese: '助けて！', romaji: 'Tasukete!' },
-            { id: 27, category: 'Emergency', english: 'Where is the hospital?', japanese: '病院はどこですか？', romaji: 'Byouin wa doko desu ka?' },
-            { id: 29, category: 'Emergency', english: 'I lost my passport', japanese: 'パスポートをなくしました', romaji: 'Pasupooto o nakushimashita' }
+            { id: 27, category: 'Emergency', english: 'Where is the hospital?', japanese: '病院はどこですか？', romaji: 'Byouin wa doko desu ka?' }
         ];
-
-        const phraseCategories = ['All', ...new Set(staticPhrases.map(p => p.category))];
-        let currentPhraseCategory = 'All';
-        let phraseSearchQuery = '';
 
         let currentPatternIndex = 0;
         let selectedVocabIndex = 0;
         let speechRate = 0.85;
+        let currentPhraseCategory = 'All';
+        let phraseSearchQuery = '';
+
+        // Robust Speech Synthesis variables (from previous turn logic)
         let activeUtterance = null;
         let activeAudio = null;
-        let cachedJapaneseVoice = null;
+        let japaneseVoice = null;
 
         function initApp() {
+            // Setup Builder
             renderPatternTabs();
-            syncActivePattern(0);
-            initVoiceSynthesis();
+            syncActivePattern();
             
-            // Phrasebook Initialization
+            // Setup Phrasebook
             renderPhraseCategories();
             renderPhraseCards();
-            
             document.getElementById('phraseSearchInput').addEventListener('input', (e) => {
                 phraseSearchQuery = e.target.value;
                 renderPhraseCards();
             });
-        }
 
-        // ==========================================
-        // Phrasebook Functions
-        // ==========================================
-        function setPhraseCategory(cat) {
-            currentPhraseCategory = cat;
-            renderPhraseCategories();
-            renderPhraseCards();
-        }
-
-        function renderPhraseCategories() {
-            const container = document.getElementById('phraseCategoryContainer');
-            container.innerHTML = phraseCategories.map(cat => `
-                <button 
-                    onclick="setPhraseCategory('${cat}')"
-                    class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-                        currentPhraseCategory === cat 
-                            ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm' 
-                            : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                    }"
-                >
-                    ${cat}
-                </button>
-            `).join('');
-        }
-
-        function renderPhraseCards() {
-            const container = document.getElementById('phraseListContainer');
-            const noResultsMsg = document.getElementById('phraseNoResults');
-
-            const filteredPhrases = staticPhrases.filter(phrase => {
-                const matchesCategory = currentPhraseCategory === 'All' || phrase.category === currentPhraseCategory;
-                const searchLower = phraseSearchQuery.toLowerCase();
-                const matchesSearch = phrase.english.toLowerCase().includes(searchLower) ||
-                                      phrase.romaji.toLowerCase().includes(searchLower) ||
-                                      phrase.japanese.includes(searchLower);
-                return matchesCategory && matchesSearch;
-            });
-
-            if (filteredPhrases.length === 0) {
-                container.innerHTML = '';
-                noResultsMsg.classList.remove('hidden');
-                noResultsMsg.classList.add('flex');
-            } else {
-                noResultsMsg.classList.add('hidden');
-                noResultsMsg.classList.remove('flex');
-                
-                container.innerHTML = filteredPhrases.map(phrase => `
-                    <div class="bg-white rounded-2xl p-4 border border-zinc-200 shadow-sm flex items-center justify-between gap-3">
-                        <div class="flex-1 min-w-0">
-                            <span class="inline-block px-2 py-0.5 bg-zinc-100 text-[10px] font-bold text-zinc-500 rounded uppercase tracking-wider mb-1.5">
-                                ${phrase.category}
-                            </span>
-                            <h3 class="text-sm font-bold text-zinc-900 mb-1 truncate">${phrase.english}</h3>
-                            <div class="font-jp font-bold text-base text-zinc-800">${phrase.japanese}</div>
-                            <div class="text-xs text-zinc-500 italic truncate">${phrase.romaji}</div>
-                        </div>
-                        <button 
-                            onclick="speakJapaneseText('${phrase.japanese.replace(/'/g, "\\'")}', this)"
-                            class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform active:scale-90 bg-rose-50 text-vermilion hover:bg-rose-100 border border-rose-100"
-                        >
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        </button>
-                    </div>
-                `).join('');
+            // Initialize Voices
+            if ('speechSynthesis' in window) {
+                loadJapaneseVoices();
+                window.speechSynthesis.onvoiceschanged = loadJapaneseVoices;
             }
         }
 
+        // --- Tab Management ---
+        function switchTab(tabId) {
+            const tabs = ['builder', 'phrasebook', 'culture'];
+            tabs.forEach(t => {
+                const navBtn = document.getElementById(`nav-${t}`);
+                const view = document.getElementById(`view-${t}`);
+                if (t === tabId) {
+                    navBtn.className = 'flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-zinc-900';
+                    view.classList.add('active');
+                } else {
+                    navBtn.className = 'flex-1 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700';
+                    view.classList.remove('active');
+                }
+            });
+        }
+
+        // --- Builder Logic ---
         function renderPatternTabs() {
             const container = document.getElementById('patternTabs');
             container.innerHTML = sentencePatterns.map((p, idx) => `
-                <button 
-                    onclick="selectPattern(${idx})" 
-                    class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
-                        idx === currentPatternIndex 
-                            ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm' 
-                            : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                    }"
-                >
-                    ${p.label}
-                </button>
+                <button onclick="selectPattern(${idx})" class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+                    idx === currentPatternIndex ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                }">${p.label}</button>
             `).join('');
         }
 
@@ -706,55 +590,36 @@
             document.getElementById('pillParticle').textContent = pattern.particle;
             document.getElementById('pillStem').textContent = pattern.stem;
 
-            buildFullSentenceDisplay(pattern, activeVocab);
+            if (activeVocab) {
+                document.getElementById('fullSentenceJapanese').innerHTML = `${pattern.prefixKanji}<span class="text-vermilion bg-rose-50 px-1.5 rounded border border-rose-200">${activeVocab.kanji}</span>${pattern.suffixKanji}`;
+                document.getElementById('fullSentenceRomaji').innerHTML = `${pattern.prefixRomaji}<span class="text-rose-700 font-semibold underline decoration-rose-300">${activeVocab.romaji}</span>${pattern.suffixRomaji}`;
+                document.getElementById('fullSentenceEnglish').textContent = `${pattern.prefixEn}${activeVocab.en}${pattern.suffixEn}`;
+            }
             renderVocabChips();
-        }
-
-        function buildFullSentenceDisplay(pattern, vocab) {
-            if (!vocab) return;
-            document.getElementById('fullSentenceJapanese').innerHTML = `
-                ${pattern.prefixKanji}
-                <span class="text-vermilion bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">${vocab.kanji}</span>
-                ${pattern.suffixKanji}
-            `;
-            document.getElementById('fullSentenceRomaji').innerHTML = `
-                ${pattern.prefixRomaji}
-                <span class="text-rose-700 font-semibold underline decoration-rose-300 decoration-2 underline-offset-4">${vocab.romaji}</span>
-                ${pattern.suffixRomaji}
-            `;
-            document.getElementById('fullSentenceEnglish').textContent = `${pattern.prefixEn}${vocab.en}${pattern.suffixEn}`;
         }
 
         function renderVocabChips() {
             const pattern = sentencePatterns[currentPatternIndex];
             const vocabList = vocabularyPool[pattern.vocabKey] || [];
-            const container = document.getElementById('vocabGrid');
             const searchVal = document.getElementById('vocabSearch').value.toLowerCase().trim();
+            const container = document.getElementById('vocabGrid');
 
             const filtered = vocabList.map((item, originalIdx) => ({ ...item, originalIdx })).filter(item => {
                 if (!searchVal) return true;
-                return item.kanji.toLowerCase().includes(searchVal) ||
-                       item.romaji.toLowerCase().includes(searchVal) ||
-                       item.en.toLowerCase().includes(searchVal);
+                return item.kanji.toLowerCase().includes(searchVal) || item.romaji.toLowerCase().includes(searchVal) || item.en.toLowerCase().includes(searchVal);
             });
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full py-8 text-center text-xs text-zinc-400 bg-white rounded-xl border border-dashed border-zinc-200">No matching vocabulary.</div>`;
-                return;
-            }
 
             container.innerHTML = filtered.map(item => {
                 const isSelected = item.originalIdx === selectedVocabIndex;
                 return `
-                    <div onclick="chooseVocab(${item.originalIdx})" class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${isSelected ? 'chip-active' : 'bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-800'}">
+                    <div onclick="chooseVocab(${item.originalIdx})" class="p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${isSelected ? 'chip-active' : 'bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-800'}">
                         <div class="flex-1 min-w-0">
-                            <div class="text-[10px] uppercase font-bold px-1.5 py-0.5 inline-block rounded mb-1 ${isSelected ? 'bg-zinc-700 text-zinc-200' : 'bg-zinc-100 text-zinc-500'}">${item.tag}</div>
-                            <div class="font-jp font-bold text-base leading-tight truncate">${item.kanji}</div>
-                            <div class="text-xs ${isSelected ? 'text-zinc-300' : 'text-zinc-500'} italic truncate">${item.romaji}</div>
-                            <div class="text-xs font-medium ${isSelected ? 'text-zinc-200' : 'text-zinc-700'} truncate mt-0.5">${item.en}</div>
+                            <div class="font-jp font-bold text-sm leading-tight truncate">${item.kanji}</div>
+                            <div class="text-[10px] ${isSelected ? 'text-zinc-300' : 'text-zinc-500'} italic truncate">${item.romaji}</div>
+                            <div class="text-[11px] font-medium ${isSelected ? 'text-zinc-200' : 'text-zinc-700'} truncate mt-0.5">${item.en}</div>
                         </div>
-                        <button onclick="event.stopPropagation(); speakWord('${item.kanji.replace(/'/g, "\\'")}')" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform active:scale-90 ${isSelected ? 'bg-zinc-700 hover:bg-zinc-600 text-white' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600'}">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <button onclick="event.stopPropagation(); speakJapaneseWord('${item.kanji.replace(/'/g, "\\'")}')" class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-transform active:scale-90 ${isSelected ? 'bg-zinc-700 text-white' : 'bg-zinc-100 text-zinc-600'}">
+                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         </button>
                     </div>
                 `;
@@ -766,22 +631,54 @@
             syncActivePattern();
             speakCurrentSentence();
         }
-
         function filterVocabList() { renderVocabChips(); }
 
-        function toggleSpeechSpeed() {
-            speechRate = speechRate === 0.85 ? 0.65 : (speechRate === 0.65 ? 1.0 : 0.85);
-            const labels = { 0.65: '0.65x (Slow)', 1.0: '1.0x (Native)', 0.85: '0.85x' };
-            document.getElementById('speedLabel').textContent = labels[speechRate];
+        function renderPhraseCategories() {
+            const categories = ['All', ...new Set(staticPhrases.map(p => p.category))];
+            const container = document.getElementById('phraseCategoryContainer');
+            container.innerHTML = categories.map(cat => `
+                <button onclick="setPhraseCategory('${cat}')" class="px-3.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+                    currentPhraseCategory === cat ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                }">${cat}</button>
+            `).join('');
         }
 
-        function initVoiceSynthesis() {
-            if ('speechSynthesis' in window) {
-                const loadVoices = () => {
-                    cachedJapaneseVoice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('ja')) || null;
-                };
-                loadVoices();
-                window.speechSynthesis.onvoiceschanged = loadVoices;
+        function setPhraseCategory(cat) {
+            currentPhraseCategory = cat;
+            renderPhraseCategories();
+            renderPhraseCards();
+        }
+
+        function renderPhraseCards() {
+            const container = document.getElementById('phraseListContainer');
+            const noResults = document.getElementById('phraseNoResults');
+            const searchLower = phraseSearchQuery.toLowerCase();
+
+            const filtered = staticPhrases.filter(p => {
+                const matchCat = currentPhraseCategory === 'All' || p.category === currentPhraseCategory;
+                const matchText = p.english.toLowerCase().includes(searchLower) || p.romaji.toLowerCase().includes(searchLower) || p.japanese.includes(searchLower);
+                return matchCat && matchText;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                noResults.classList.remove('hidden');
+                noResults.classList.add('flex');
+            } else {
+                noResults.classList.add('hidden');
+                noResults.classList.remove('flex');
+                container.innerHTML = filtered.map(p => `
+                    <div class="bg-white rounded-xl p-3.5 border border-zinc-200 shadow-sm flex items-center justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-xs font-bold text-zinc-900 mb-0.5 truncate">${p.english}</h3>
+                            <div class="font-jp font-bold text-sm text-zinc-800">${p.japanese}</div>
+                            <div class="text-[10px] text-zinc-500 italic truncate">${p.romaji}</div>
+                        </div>
+                        <button onclick="speakJapaneseWord('${p.japanese.replace(/'/g, "\\'")}', this)" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform active:scale-90 bg-zinc-100 text-zinc-600 hover:bg-zinc-200">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                    </div>
+                `).join('');
             }
         }
 
@@ -791,65 +688,6 @@
             return `${pattern.prefixKanji}${activeVocab.kanji}${pattern.suffixKanji}`;
         }
 
-        function speakCurrentSentence() {
-            speakJapaneseText(getFullSentencePlainJapanese(), document.getElementById('mainPlayBtn'));
-        }
-
-        function speakWord(text) {
-            speakJapaneseText(text);
-        }
-
-        function speakJapaneseText(text, triggerBtn = null) {
-            if (activeAudio) { activeAudio.pause(); activeAudio = null; }
-            
-            let originalContent = '';
-            if (triggerBtn) {
-                originalContent = triggerBtn.innerHTML;
-                triggerBtn.classList.add('pulse-subtle');
-            }
-
-            const resetBtn = () => {
-                if (triggerBtn && originalContent) {
-                    triggerBtn.innerHTML = originalContent;
-                    triggerBtn.classList.remove('pulse-subtle');
-                }
-            };
-
-            if ('speechSynthesis' in window) {
-                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-                window.speechSynthesis.cancel();
-
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'ja-JP';
-                utterance.rate = speechRate;
-                if (cachedJapaneseVoice) utterance.voice = cachedJapaneseVoice;
-                
-                activeUtterance = utterance;
-                utterance.onend = () => { resetBtn(); activeUtterance = null; };
-                utterance.onerror = (e) => {
-                    if (['interrupted', 'canceled'].includes(e.error)) { resetBtn(); activeUtterance = null; return; }
-                    fallbackAudioTTS(text, resetBtn);
-                };
-                window.speechSynthesis.speak(utterance);
-            } else {
-                fallbackAudioTTS(text, resetBtn);
-            }
-        }
-
-        function fallbackAudioTTS(text, onComplete) {
-            try {
-                const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ja&q=${encodeURIComponent(text)}`;
-                activeAudio = new Audio(url);
-                activeAudio.playbackRate = speechRate <= 0.7 ? 0.75 : 1.0;
-                activeAudio.onended = () => { if (onComplete) onComplete(); activeAudio = null; };
-                activeAudio.onerror = () => { if (onComplete) onComplete(); activeAudio = null; showToast('Audio unavailable', '⚠️'); };
-                const promise = activeAudio.play();
-                if (promise !== undefined) promise.catch(() => { if (onComplete) onComplete(); activeAudio = null; });
-            } catch (err) {
-                if (onComplete) onComplete(); showToast('Audio error', '⚠️');
-            }
-        }
-
         function copyGeneratedPhrase() {
             const text = getFullSentencePlainJapanese();
             const temp = document.createElement('textarea');
@@ -857,11 +695,9 @@
             temp.style.position = 'fixed'; temp.style.opacity = '0';
             document.body.appendChild(temp);
             temp.focus(); temp.select();
-            
             let successful = false;
             try { successful = document.execCommand('copy'); } catch (err) {}
             document.body.removeChild(temp);
-            
             showToast(successful ? `Copied: "${text}"` : 'Failed to copy', successful ? '✓' : '⚠️');
         }
 
@@ -871,6 +707,94 @@
             document.getElementById('toastIcon').textContent = icon;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function toggleSpeechSpeed() {
+            speechRate = speechRate === 0.85 ? 0.65 : (speechRate === 0.65 ? 1.0 : 0.85);
+            const labels = { 0.65: '0.65x', 1.0: '1.0x', 0.85: '0.85x' };
+            document.getElementById('speedLabel').textContent = labels[speechRate];
+        }
+
+        function loadJapaneseVoices() {
+            if ('speechSynthesis' in window) {
+                const voices = window.speechSynthesis.getVoices();
+                japaneseVoice = voices.find(v => v.lang === 'ja-JP' || v.lang === 'ja' || v.lang.startsWith('ja')) || null;
+            }
+        }
+
+        function speakCurrentSentence() {
+            speakJapaneseWord(getFullSentencePlainJapanese(), document.getElementById('mainPlayBtn'));
+        }
+
+        function playFallbackAudio(text, btnElement, originalHTML) {
+            try {
+                if (activeAudio) { activeAudio.pause(); activeAudio = null; }
+                const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ja&q=${encodeURIComponent(text)}`;
+                activeAudio = new Audio(url);
+                activeAudio.playbackRate = speechRate <= 0.7 ? 0.75 : 1.0;
+                
+                activeAudio.onended = () => {
+                    if (btnElement) { btnElement.innerHTML = originalHTML; btnElement.classList.remove('pulse-subtle'); }
+                    activeAudio = null;
+                };
+                activeAudio.onerror = () => {
+                    if (btnElement) { btnElement.innerHTML = originalHTML; btnElement.classList.remove('pulse-subtle'); }
+                    activeAudio = null;
+                    showToast("Audio unavailable", "⚠️");
+                };
+                
+                const playPromise = activeAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        if (btnElement) { btnElement.innerHTML = originalHTML; btnElement.classList.remove('pulse-subtle'); }
+                        activeAudio = null;
+                    });
+                }
+            } catch (err) {
+                if (btnElement) { btnElement.innerHTML = originalHTML; btnElement.classList.remove('pulse-subtle'); }
+            }
+        }
+
+        function speakJapaneseWord(text, btnElement = null) {
+            if (activeAudio) { activeAudio.pause(); activeAudio = null; }
+            
+            let originalHTML = '';
+            if (btnElement) {
+                originalHTML = btnElement.innerHTML;
+                btnElement.classList.add('pulse-subtle');
+            }
+
+            if (!('speechSynthesis' in window)) {
+                playFallbackAudio(text, btnElement, originalHTML);
+                return;
+            }
+
+            if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ja-JP';
+            utterance.rate = speechRate;
+            if (japaneseVoice) utterance.voice = japaneseVoice;
+            
+            activeUtterance = utterance;
+
+            utterance.onend = () => {
+                if (btnElement) { btnElement.innerHTML = originalHTML; btnElement.classList.remove('pulse-subtle'); }
+                activeUtterance = null;
+            };
+
+            utterance.onerror = (e) => {
+                if (e.error === 'interrupted' || e.error === 'canceled') {
+                    if (btnElement) { btnElement.innerHTML = originalHTML; btnElement.classList.remove('pulse-subtle'); }
+                    activeUtterance = null;
+                    return;
+                }
+                activeUtterance = null;
+                playFallbackAudio(text, btnElement, originalHTML);
+            };
+
+            window.speechSynthesis.speak(utterance);
         }
 
         document.addEventListener('DOMContentLoaded', initApp);
