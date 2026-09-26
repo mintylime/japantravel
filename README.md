@@ -1,2 +1,3 @@
-# japantravel
-Useful and Fun! tools for travelling in Japan
+# Japan trip
+Language, culture and travel guide
+https://mintylime.github.io/japantravel/
