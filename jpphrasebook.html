@@ -115,15 +115,21 @@
             </div>
 
             <!-- Tab Navigation -->
-            <div class="flex p-1 bg-zinc-100 rounded-xl border border-zinc-200">
-                <button onclick="switchTab('builder')" id="nav-builder" class="flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-zinc-900">
+            <div class="flex overflow-x-auto no-scrollbar p-1 bg-zinc-100 rounded-xl border border-zinc-200 gap-1">
+                <button onclick="switchTab('builder')" id="nav-builder" class="flex-none px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-zinc-900">
                     Builder
                 </button>
-                <button onclick="switchTab('phrasebook')" id="nav-phrasebook" class="flex-1 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
+                <button onclick="switchTab('phrasebook')" id="nav-phrasebook" class="flex-none px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
                     Phrasebook
                 </button>
-                <button onclick="switchTab('culture')" id="nav-culture" class="flex-1 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
+                <button onclick="switchTab('scenarios')" id="nav-scenarios" class="flex-none px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
+                    Scenarios
+                </button>
+                <button onclick="switchTab('culture')" id="nav-culture" class="flex-none px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
                     Kansai Guide
+                </button>
+                <button onclick="switchTab('prep')" id="nav-prep" class="flex-none px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700">
+                    Custom Prep
                 </button>
             </div>
         </div>
@@ -211,6 +217,15 @@
             <div id="phraseNoResults" class="hidden flex-col items-center justify-center py-10 px-4 text-center bg-zinc-50 rounded-2xl border border-zinc-200 border-dashed">
                 <p class="text-sm font-medium text-zinc-600">No phrases found</p>
             </div>
+        </div>
+
+        <!-- View: Scenarios -->
+        <div id="view-scenarios" class="tab-content space-y-5">
+            <div class="mb-2">
+                <h2 class="text-xl font-bold text-zinc-900 tracking-tight">Travel Scenarios</h2>
+                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Ready-made phrases for common situations.</p>
+            </div>
+            <div id="scenariosContainer" class="space-y-4"></div>
         </div>
 
         <div id="view-culture" class="tab-content space-y-5">
@@ -376,6 +391,22 @@
             </details>
         </div>
 
+        <!-- View: Custom Prep (Local Storage) -->
+        <div id="view-prep" class="tab-content space-y-5">
+            <div class="mb-2">
+                <h2 class="text-xl font-bold text-zinc-900 tracking-tight">Custom Prep</h2>
+                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Create your own situations and save translations. Data is saved locally on this device.</p>
+            </div>
+            
+            <!-- Add New Situation -->
+            <div class="bg-white rounded-2xl p-4 border border-zinc-200 shadow-sm flex gap-2">
+                <input type="text" id="newSituationName" placeholder="e.g., Hotel Laundry, Train to Kyoto" class="flex-1 text-sm px-3 py-2 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-vermilion">
+                <button onclick="addCustomSituation()" class="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-zinc-800 transition-colors">Add</button>
+            </div>
+
+            <div id="customSituationsContainer" class="space-y-4"></div>
+        </div>
+
     </main>
 
     <div id="toastNotice" class="fixed bottom-6 left-1/2 z-50 bg-zinc-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 border border-zinc-700">
@@ -511,6 +542,57 @@
             { id: 27, category: 'Emergency', english: 'Where is the hospital?', japanese: '病院はどこですか？', romaji: 'Byouin wa doko desu ka?' }
         ];
 
+        // --- Scenarios Data ---
+        const scenariosData = [
+            {
+                title: "Transportation", icon: "🚆",
+                situations: [
+                    { name: "Buying tickets", en: "Where is the ticket machine?", ja: "券売機はどこですか？", ro: "Kenbaiki wa doko desu ka?" },
+                    { name: "Flight changes", en: "My flight was canceled.", ja: "フライトがキャンセルされました。", ro: "Furaito ga kyanseru saremashita." },
+                    { name: "Lost luggage", en: "My baggage hasn't arrived.", ja: "荷物が届きません。", ro: "Nimotsu ga todokimasen." },
+                    { name: "Directions", en: "Which platform is for Osaka?", ja: "大阪行きは何番線ですか？", ro: "Osaka yuki wa nan-bansen desu ka?" }
+                ],
+                vocab: ["駅 (Eki) - Station", "切符 (Kippu) - Ticket", "空港 (Kuukou) - Airport", "荷物 (Nimotsu) - Luggage"]
+            },
+            {
+                title: "Food and Dining", icon: "🍜",
+                situations: [
+                    { name: "Dietary needs", en: "I am vegetarian.", ja: "私はベジタリアンです。", ro: "Watashi wa bejitarian desu." },
+                    { name: "Ordering meals", en: "I'll have this.", ja: "これをお願いします。", ro: "Kore o onegaishimasu." },
+                    { name: "Paying the bill", en: "Separate checks, please.", ja: "別々でお会計をお願いします。", ro: "Betsubetsu de okaikei o onegaishimasu." },
+                    { name: "Reservations", en: "Do you have a table for two?", ja: "2名ですが、入れますか？", ro: "Ni-mei desu ga, hairemasu ka?" }
+                ],
+                vocab: ["お会計 (Okaikei) - The check", "メニュー (Menyuu) - Menu", "予約 (Yoyaku) - Reservation", "アレルギー (Arerugii) - Allergy"]
+            },
+            {
+                title: "Accommodation", icon: "🏨",
+                situations: [
+                    { name: "Check-in", en: "Can I leave my luggage here?", ja: "荷物を預かってもらえますか？", ro: "Nimotsu o azukatte moraemasu ka?" },
+                    { name: "Room issues", en: "The air conditioner is broken.", ja: "エアコンが壊れています。", ro: "Eakon ga kowarete imasu." },
+                    { name: "Checkout", en: "Could you call a taxi?", ja: "タクシーを呼んでもらえますか？", ro: "Takushii o yonde moraemasu ka?" }
+                ],
+                vocab: ["フロント (Furonto) - Front desk", "部屋 (Heya) - Room", "鍵 (Kagi) - Key", "タクシー (Takushii) - Taxi"]
+            },
+            {
+                title: "Shopping and Money", icon: "🛍️",
+                situations: [
+                    { name: "Bargaining", en: "Can you make it a little cheaper?", ja: "もう少し安くなりますか？", ro: "Mou sukoshi yasukunarimasu ka?" },
+                    { name: "Payments", en: "Can I use Apple Pay?", ja: "アップルペイは使えますか？", ro: "Appuru pei wa tsukaemasu ka?" },
+                    { name: "Exchanging", en: "Where can I exchange money?", ja: "両替はどこでできますか？", ro: "Ryougae wa doko de dekimasu ka?" }
+                ],
+                vocab: ["現金 (Genkin) - Cash", "クレジットカード (Kurejitto kaado) - Credit Card", "両替 (Ryougae) - Exchange", "レジ (Reji) - Cash register"]
+            },
+            {
+                title: "Emergencies & Health", icon: "🏥",
+                situations: [
+                    { name: "Pharmacy visits", en: "I have a stomachache.", ja: "お腹が痛いです。", ro: "Onaka ga itai desu." },
+                    { name: "Lost passport", en: "I lost my passport.", ja: "パスポートをなくしました。", ro: "Pasupooto o nakushimashita." },
+                    { name: "Getting lost", en: "I'm lost. Where is this hotel?", ja: "道に迷いました。このホテルはどこですか？", ro: "Michi ni mayoimashita. Kono hoteru wa doko desu ka?" }
+                ],
+                vocab: ["薬 (Kusuri) - Medicine", "病院 (Byouin) - Hospital", "警察 (Keisatsu) - Police", "助けて (Tasukete) - Help!"]
+            }
+        ];
+
         let currentPatternIndex = 0;
         let selectedVocabIndex = 0;
         let speechRate = 0.85;
@@ -530,6 +612,11 @@
             // Setup Phrasebook
             renderPhraseCategories();
             renderPhraseCards();
+
+            // Setup new tabs
+            renderScenarios();
+            renderCustomSituations();
+
             document.getElementById('phraseSearchInput').addEventListener('input', (e) => {
                 phraseSearchQuery = e.target.value;
                 renderPhraseCards();
@@ -544,15 +631,15 @@
 
         // --- Tab Management ---
         function switchTab(tabId) {
-            const tabs = ['builder', 'phrasebook', 'culture'];
+            const tabs = ['builder', 'phrasebook', 'scenarios', 'culture', 'prep'];
             tabs.forEach(t => {
                 const navBtn = document.getElementById(`nav-${t}`);
                 const view = document.getElementById(`view-${t}`);
                 if (t === tabId) {
-                    navBtn.className = 'flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-zinc-900';
+                    navBtn.className = 'flex-none px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all bg-white shadow-sm text-zinc-900';
                     view.classList.add('active');
                 } else {
-                    navBtn.className = 'flex-1 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700';
+                    navBtn.className = 'flex-none px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-zinc-500 hover:text-zinc-700';
                     view.classList.remove('active');
                 }
             });
@@ -680,6 +767,136 @@
                     </div>
                 `).join('');
             }
+        }
+
+        function renderScenarios() {
+            const container = document.getElementById('scenariosContainer');
+            container.innerHTML = scenariosData.map(category => `
+                <details class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden group">
+                    <summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-zinc-100 text-zinc-600 flex items-center justify-center text-lg">${category.icon}</div>
+                            <h3 class="font-bold text-sm text-zinc-900">${category.title}</h3>
+                        </div>
+                        <svg class="chevron w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </summary>
+                    <div class="p-4 border-t border-zinc-100 space-y-3">
+                        ${category.situations.map(sit => `
+                            <div class="bg-zinc-50 rounded-xl p-3 border border-zinc-100 flex items-center justify-between gap-3">
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">${sit.name}</span>
+                                    <h4 class="text-xs font-semibold text-zinc-900 mb-1 truncate">${sit.en}</h4>
+                                    <div class="font-jp font-bold text-sm text-zinc-800">${sit.ja}</div>
+                                    <div class="text-[10px] text-zinc-500 italic truncate">${sit.ro}</div>
+                                </div>
+                                <button onclick="speakJapaneseWord('${sit.ja.replace(/'/g, "\\'")}', this)" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform active:scale-90 bg-white shadow-sm border border-zinc-200 text-zinc-600 hover:bg-zinc-100">
+                                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                </button>
+                            </div>
+                        `).join('')}
+                        <div class="mt-3 pt-3 border-t border-dashed border-zinc-200">
+                            <h5 class="text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-wider">Useful Vocabulary</h5>
+                            <div class="flex flex-wrap gap-1.5">
+                                ${category.vocab.map(v => `<span class="px-2 py-1 bg-zinc-100 text-zinc-600 text-[10px] rounded-md font-medium border border-zinc-200">${v}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            `).join('');
+        }
+
+        // --- Custom Prep Logic ---
+        let customSituations = JSON.parse(localStorage.getItem('nihongo_pal_custom_prep')) || [];
+
+        function saveCustomSituations() {
+            localStorage.setItem('nihongo_pal_custom_prep', JSON.stringify(customSituations));
+            renderCustomSituations();
+        }
+
+        function addCustomSituation() {
+            const input = document.getElementById('newSituationName');
+            const name = input.value.trim();
+            if (!name) return;
+            customSituations.unshift({ id: Date.now(), name, phrases: [] });
+            input.value = '';
+            saveCustomSituations();
+        }
+
+        function deleteCustomSituation(id) {
+            if(confirm('Delete this situation?')) {
+                customSituations = customSituations.filter(s => s.id !== id);
+                saveCustomSituations();
+            }
+        }
+
+        function addCustomPhrase(sitId) {
+            const en = document.getElementById(`newPhraseEn-${sitId}`).value.trim();
+            const ja = document.getElementById(`newPhraseJa-${sitId}`).value.trim();
+            const ro = document.getElementById(`newPhraseRo-${sitId}`).value.trim();
+            
+            if (!en || !ja) return showToast("English and Japanese are required", "⚠️");
+
+            const sit = customSituations.find(s => s.id === sitId);
+            sit.phrases.push({ id: Date.now(), en, ja, ro });
+            
+            // clear inputs
+            document.getElementById(`newPhraseEn-${sitId}`).value = '';
+            document.getElementById(`newPhraseJa-${sitId}`).value = '';
+            document.getElementById(`newPhraseRo-${sitId}`).value = '';
+
+            saveCustomSituations();
+        }
+
+        function deleteCustomPhrase(sitId, phraseId) {
+            const sit = customSituations.find(s => s.id === sitId);
+            sit.phrases = sit.phrases.filter(p => p.id !== phraseId);
+            saveCustomSituations();
+        }
+
+        function renderCustomSituations() {
+            const container = document.getElementById('customSituationsContainer');
+            if (customSituations.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-sm text-zinc-500 bg-white border border-zinc-200 rounded-2xl border-dashed">No custom situations yet.<br>Create one above!</div>`;
+                return;
+            }
+
+            container.innerHTML = customSituations.map(sit => `
+                <div class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+                    <div class="flex items-center justify-between p-3 bg-zinc-50 border-b border-zinc-200">
+                        <h3 class="font-bold text-sm text-zinc-900">${sit.name}</h3>
+                        <button onclick="deleteCustomSituation(${sit.id})" class="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1">Delete</button>
+                    </div>
+                    
+                    <div class="p-3 space-y-2">
+                        ${sit.phrases.map(p => `
+                            <div class="flex items-center justify-between gap-3 p-2 bg-zinc-50 rounded-lg border border-zinc-100">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs font-semibold text-zinc-900 mb-0.5 truncate">${p.en}</div>
+                                    <div class="font-jp font-bold text-sm text-zinc-800">${p.ja}</div>
+                                    <div class="text-[10px] text-zinc-500 italic truncate">${p.ro}</div>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <button onclick="speakJapaneseWord('${p.ja.replace(/'/g, "\\'")}', this)" class="w-7 h-7 rounded-full flex items-center justify-center bg-vermilion text-white hover:bg-rose-700 shadow-sm transition-transform active:scale-90">
+                                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    </button>
+                                    <button onclick="deleteCustomPhrase(${sit.id},${p.id})" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-red-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+
+                        <div class="mt-3 pt-3 border-t border-zinc-100 space-y-2">
+                            <input type="text" id="newPhraseEn-${sit.id}" placeholder="English phrase" class="w-full text-xs px-2.5 py-1.5 border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-vermilion">
+                            <div class="flex gap-2">
+                                <input type="text" id="newPhraseJa-${sit.id}" placeholder="Japanese" class="flex-1 text-xs px-2.5 py-1.5 border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-vermilion">
+                                <input type="text" id="newPhraseRo-${sit.id}" placeholder="Romaji" class="w-24 text-xs px-2.5 py-1.5 border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-vermilion">
+                                <button onclick="addCustomPhrase(${sit.id})" class="px-3 py-1.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-lg text-xs font-bold hover:bg-zinc-200">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function getFullSentencePlainJapanese() {
