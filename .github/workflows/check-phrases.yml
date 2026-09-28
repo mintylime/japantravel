@@ -21,12 +21,19 @@ jobs:
               sys.exit(f"phrases.json is not valid JSON: {e}")
           if not isinstance(phrases, list):
               sys.exit("phrases.json must be a list of phrases, wrapped in [ ]")
-          required = ['category', 'english', 'japanese', 'romaji']
+          required = ['id', 'category', 'english', 'japanese', 'romaji']
           errors = []
+          seen_ids = {}
           for i, p in enumerate(phrases, 1):
               missing = [k for k in required if not str(p.get(k, '')).strip()]
               if missing:
                   errors.append(f"Phrase {i} ({p.get('english', '?')}) is missing: {', '.join(missing)}")
+              pid = p.get('id')
+              if pid:
+                  if pid in seen_ids:
+                      errors.append(f"Phrase {i} ({p.get('english', '?')}) reuses id '{pid}' from phrase {seen_ids[pid]} — ids must stay unique, since Favourites is keyed on them")
+                  else:
+                      seen_ids[pid] = i
           if errors:
               sys.exit("\n".join(errors))
           print(f"OK: {len(phrases)} phrases")
