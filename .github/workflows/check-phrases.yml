@@ -1,0 +1,33 @@
+# Checks phrases.json on every push and pull request, so a missing comma
+# or a phrase with no Japanese shows up here instead of as an empty tab.
+name: Check phrases.json
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate phrases.json
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          try:
+              phrases = json.load(open('phrases.json', encoding='utf-8'))
+          except json.JSONDecodeError as e:
+              sys.exit(f"phrases.json is not valid JSON: {e}")
+          if not isinstance(phrases, list):
+              sys.exit("phrases.json must be a list of phrases, wrapped in [ ]")
+          required = ['category', 'english', 'japanese', 'romaji']
+          errors = []
+          for i, p in enumerate(phrases, 1):
+              missing = [k for k in required if not str(p.get(k, '')).strip()]
+              if missing:
+                  errors.append(f"Phrase {i} ({p.get('english', '?')}) is missing: {', '.join(missing)}")
+          if errors:
+              sys.exit("\n".join(errors))
+          print(f"OK: {len(phrases)} phrases")
+          PY
