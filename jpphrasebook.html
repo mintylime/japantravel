@@ -663,14 +663,41 @@
             renderPhraseCards();
         }
 
+        // Optional icon + one-line subtitle for a phrase's "group" (e.g. Dining's venue types).
+        // A group with no entry here still renders fine, just without the icon/subtitle.
+        const phraseGroupMeta = {
+            'Izakaya & Counter Bars': { icon: '🍶', subtitle: 'Best for making friends' },
+            'Casual Restaurants & Ramen Shops': { icon: '🍜', subtitle: '' },
+            'Cafés & Convenience Stores (Konbini)': { icon: '🏪', subtitle: '' },
+            'Getting the Bill (Everywhere)': { icon: '🧾', subtitle: 'Works at almost any place' }
+        };
+
+        function renderPhraseCard(p) {
+            return `
+                <div class="bg-white rounded-xl p-3.5 border border-zinc-200 shadow-sm flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        ${p.context ? `<span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-0.5">${p.context}</span>` : ''}
+                        <h3 class="text-xs font-bold text-zinc-900 mb-0.5">${p.english}</h3>
+                        <div class="font-jp font-bold text-sm text-zinc-800">${p.japanese}</div>
+                        <div class="text-[10px] text-zinc-500 italic truncate">${p.romaji}</div>
+                        ${p.tip ? `<div class="mt-1.5 flex items-start gap-1 text-[10px] leading-relaxed text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1.5"><span class="flex-shrink-0">💡</span><span>${p.tip}</span></div>` : ''}
+                    </div>
+                    <button onclick="speakJapaneseWord('${p.japanese.replace(/'/g, "\\'")}', this)" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform active:scale-90 bg-zinc-100 text-zinc-600 hover:bg-zinc-200">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                </div>
+            `;
+        }
+
         function renderPhraseCards() {
             const container = document.getElementById('phraseListContainer');
             const noResults = document.getElementById('phraseNoResults');
             const searchLower = phraseSearchQuery.toLowerCase();
+            const isSearching = searchLower.trim() !== '';
 
             const filtered = staticPhrases.filter(p => {
                 const matchCat = currentPhraseCategory === 'All' || p.category === currentPhraseCategory;
-                const matchText = p.english.toLowerCase().includes(searchLower) || p.romaji.toLowerCase().includes(searchLower) || p.japanese.includes(searchLower) || (p.context || '').toLowerCase().includes(searchLower);
+                const matchText = p.english.toLowerCase().includes(searchLower) || p.romaji.toLowerCase().includes(searchLower) || p.japanese.includes(searchLower) || (p.context || '').toLowerCase().includes(searchLower) || (p.tip || '').toLowerCase().includes(searchLower);
                 return matchCat && matchText;
             });
 
@@ -678,23 +705,61 @@
                 container.innerHTML = '';
                 noResults.classList.remove('hidden');
                 noResults.classList.add('flex');
-            } else {
-                noResults.classList.add('hidden');
-                noResults.classList.remove('flex');
-                container.innerHTML = filtered.map(p => `
-                    <div class="bg-white rounded-xl p-3.5 border border-zinc-200 shadow-sm flex items-center justify-between gap-3">
-                        <div class="flex-1 min-w-0">
-                            ${p.context ? `<span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-0.5">${p.context}</span>` : ''}
-                            <h3 class="text-xs font-bold text-zinc-900 mb-0.5 truncate">${p.english}</h3>
-                            <div class="font-jp font-bold text-sm text-zinc-800">${p.japanese}</div>
-                            <div class="text-[10px] text-zinc-500 italic truncate">${p.romaji}</div>
-                        </div>
-                        <button onclick="speakJapaneseWord('${p.japanese.replace(/'/g, "\\'")}', this)" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform active:scale-90 bg-zinc-100 text-zinc-600 hover:bg-zinc-200">
-                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        </button>
-                    </div>
-                `).join('');
+                return;
             }
+            noResults.classList.add('hidden');
+            noResults.classList.remove('flex');
+
+            // Browsing one category with no active search: group phrases that share a
+            // "group" (e.g. venue type) under a heading, and always push vocab ("Word")
+            // to the very end under "Useful Vocabulary" — regardless of group order.
+            const canGroup = currentPhraseCategory !== 'All' && !isSearching && filtered.some(p => p.group);
+            if (!canGroup) {
+                container.innerHTML = filtered.map(renderPhraseCard).join('');
+                return;
+            }
+
+            const words = filtered.filter(p => p.context === 'Word');
+            const rest = filtered.filter(p => p.context !== 'Word');
+            const groupOrder = [];
+            const grouped = {};
+            rest.forEach(p => {
+                const key = p.group || '';
+                if (!grouped[key]) { grouped[key] = []; groupOrder.push(key); }
+                grouped[key].push(p);
+            });
+
+            let html = groupOrder.map(key => {
+                const meta = phraseGroupMeta[key] || {};
+                const heading = key ? `
+                    <div class="flex items-baseline gap-2 pt-1 pb-0.5">
+                        ${meta.icon ? `<span class="text-sm">${meta.icon}</span>` : ''}
+                        <h3 class="text-xs font-bold text-zinc-900">${key}</h3>
+                        ${meta.subtitle ? `<span class="text-[10px] text-zinc-400">${meta.subtitle}</span>` : ''}
+                    </div>` : '';
+                return heading + grouped[key].map(renderPhraseCard).join('');
+            }).join('');
+
+            if (words.length) {
+                html += `
+                    <div class="pt-2">
+                        <h4 class="text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-wider">Useful Vocabulary</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            ${words.map(p => `
+                                <div class="bg-zinc-50 rounded-lg px-2.5 py-2 border border-zinc-200 flex items-center justify-between gap-1.5">
+                                    <div class="min-w-0">
+                                        <div class="font-jp font-bold text-xs text-zinc-800 truncate">${p.japanese}</div>
+                                        <div class="text-[10px] text-zinc-500 truncate">${p.english}</div>
+                                    </div>
+                                    <button onclick="speakJapaneseWord('${p.japanese.replace(/'/g, "\\'")}', this)" class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-white border border-zinc-200 text-zinc-500 active:scale-90">
+                                        <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+            container.innerHTML = html;
         }
 
         // --- Custom Prep Logic ---
