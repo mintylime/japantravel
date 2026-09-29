@@ -264,6 +264,29 @@ summary{display:list-item}
   .date-row { display: grid; grid-template-columns: 5.6rem 1fr; gap: .6rem; padding: .5rem 0; border-bottom: 1px dashed #e4e4e7; font-size: 14px; }
   .date-row:last-child { border-bottom: 0; }
   .date-row b { color: #be123c; font-weight: 700; }
+  .places { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: .75rem; }
+  .place-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: .5rem .15rem; border: 1px solid #e4e4e7; border-radius: .85rem; background: #fff; font-size: 11px; font-weight: 700; color: #3f3f46; cursor: pointer; min-width: 0; }
+  .place-tab span { font-size: 20px; line-height: 1.2; }
+  .place-tab.on { background: #e11d48; border-color: #e11d48; color: #fff; box-shadow: 0 2px 6px rgba(225,29,72,.25); }
+  .go { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: #be123c; cursor: pointer; text-decoration: underline; text-decoration-color: #fda4af; text-underline-offset: 3px; }
+  .cities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: .9rem 0; }
+  .city { text-align: left; border: 1px solid #e4e4e7; border-radius: .85rem; padding: .6rem .7rem; background: #fafaf9; cursor: pointer; font: inherit; color: #18181b; }
+  .city:hover { border-color: #fda4af; }
+  .city span { display: block; font-size: 18px; }
+  .city i { font-style: normal; color: #be123c; font-weight: 700; margin-left: .15rem; }
+  .city small { display: block; font-size: 12px; line-height: 1.4; color: #52525b; margin-top: .2rem; }
+  .pb { border: 1px solid #e4e4e7; border-radius: .85rem; overflow: hidden; margin: .6rem 0; }
+  .pb-row { padding: .55rem .75rem; border-bottom: 1px solid #f4f4f5; }
+  .pb-row:last-child { border-bottom: 0; }
+  .pb-row:nth-child(odd) { background: #fafaf9; }
+  .pb-en { font-size: 13px; color: #52525b; margin-top: .1rem; }
+  .key { margin: .6rem 0; }
+  .key-row { display: grid; grid-template-columns: 6.4rem 1fr; gap: .7rem; padding: .6rem 0; border-bottom: 1px dashed #e4e4e7; font-size: 14px; line-height: 1.5; }
+  .key-row:last-child { border-bottom: 0; }
+  .key-era b { display: block; color: #18181b; }
+  .key-era span { display: block; font-size: 12px; color: #be123c; font-weight: 700; }
+  .key-era .say { font-size: 13px; }
+  @media (max-width: 380px) { .place-tab { font-size: 10px; } .place-tab span { font-size: 18px; } }
 </style>
 </head>
 
@@ -291,11 +314,13 @@ summary{display:list-item}
   <section id="view-guide" class="view active">
     <div class="mb-4">
       <h2 class="text-xl font-bold">Your two weeks in Kansai</h2>
-      <p class="text-sm text-zinc-500 mt-1">Tap any <span class="say">red Japanese</span> to hear it. Sections open and close, so read a bit on each train ride. <span class="say"><a href = "jpphrasebook.html">Phrasebook here.</a></span></p>
+      <p class="text-sm text-zinc-500 mt-1">Pick where you are today. Tap any <span class="say">red Japanese</span> to hear it. Sections open and close, so read a bit on each train ride. <span class="say"><a href = "jpphrasebook.html">Phrasebook here.</a></span></p>
     </div>
+    <div id="guidePlaces" class="places"></div>
+    <p id="guideBlurb" class="text-sm text-zinc-600 mb-3"></p>
     <div id="guideToc" class="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-3"></div>
     <div id="guideBody" class="space-y-3"></div>
-    <p class="text-xs text-zinc-400 mt-6 leading-relaxed">Researched 26 September 2026 from the Japan Meteorological Agency, JNTO, the Tanabe City Kumano Tourism Bureau, Kobe and Ashiya city sites, Visit Kinosaki, the Takenaka museum, and others. Trails, buses and festivals change, so check on the day.</p>
+    <p class="text-xs text-zinc-400 mt-6 leading-relaxed">Researched 26–29 September 2026 from the Japan Meteorological Agency, JNTO, Kyoto City, Nara Prefecture and the Nara Deer Preservation Foundation, the Kobe Beef association, temple and museum sites, the Tanabe City Kumano Tourism Bureau, Kobe and Ashiya city sites, Visit Kinosaki, the Takenaka museum, and others. Fees, trails, buses and festival dates change. Gion's lane rules come from residents' councils, so the signs on the ground win. Legendary founding dates (Ikuta 201, Fushimi Inari 711) come from chronicles that mix history and myth.</p>
   </section>
 
   <!-- ============ PHRASES ============ -->
@@ -439,64 +464,158 @@ const PL = p => `
     ${p.phrase ? `<div class="meta"><b>Try:</b> ${J(p.phrase[0])} <span class="ro">${p.phrase[1]}</span> — ${p.phrase[2]}</div>` : ''}
   </div>`;
 
+const GO = (id, label) => `<button class="go" data-action="toc" data-val="${id}">${label} →</button>`;
+const TL = rows => `<div>${rows.map(r => `<div class="date-row"><b>${r[0]}</b><span>${r[1]}</span></div>`).join('')}</div>`;
+const PB = rows => `<div class="pb">${rows.map(r => `<div class="pb-row"><div>${J(r[0])} <span class="ro">${r[1]}</span></div><div class="pb-en">${r[2]}</div></div>`).join('')}</div>`;
+const TALK = (qs, care) => `<h4>Conversation starters</h4><ul>${qs.map(q => `<li>${q}</li>`).join('')}</ul>${care ? `<div class="warn"><b>Go gently:</b> ${care}</div>` : ''}`;
+const KEY = rows => `<div class="key">${rows.map(r => `<div class="key-row"><div class="key-era"><b>${r[0]}</b> ${J(r[1])}<span>${r[2]}</span></div><div>${r[3]}<div class="meta"><b>See it:</b> ${r[4]}</div></div></div>`).join('')}</div>`;
+
+const groups = [
+  { id:'basics',  icon:'🧭', name:'Basics',  blurb:'Works everywhere in Kansai: dates, the day plan, history, how to read a temple, manners, trains, food.' },
+  { id:'osaka',   icon:'🏮', name:'Osaka',   ja:'大阪', blurb:'Your base. The merchant city: chatty, funny, blunt and fond of a bargain.' },
+  { id:'kobe',    icon:'⚓', name:'Kobe',    ja:'神戸', blurb:'The port that opened to the world on 1 January 1868. Meiji villas, beef, dry sake and the 1995 earthquake.' },
+  { id:'nara',    icon:'🦌', name:'Nara',    ja:'奈良', blurb:'Capital 710–784, where the Japanese state and its Buddhism took shape. Stay one night.' },
+  { id:'kyoto',   icon:'⛩️', name:'Kyoto',   ja:'京都', blurb:'Capital 794–1869. The court, Zen, tea and geiko, now with new tourist rules and fees.' },
+  { id:'further', icon:'🥾', name:'Further', blurb:'Mountains, pilgrim trails, onsen towns and festivals, one to four hours out.' }
+];
+
 const guide = [
-{ id:'now', icon:'🍂', title:'Right now: season, weather, dates', html:`
+/* ======================= BASICS ======================= */
+{ id:'now', short:'Right now', grp:'basics', icon:'🍂', title:'Right now: season, weather, dates', html:`
 <p>Late September to mid October is Kansai's best hiking window and the heart of festival season. Lowland maples won't peak until mid-to-late November, but high ground starts to turn by mid October.</p>
 <h4>Weather</h4>
 <ul>
-<li>October in Osaka averages 19.5°C, with highs near 24°C, lows near 16°C and about 136 mm of rain (JMA normals, 1991–2020).</li>
+<li>October in Osaka averages 19.5°C, with highs near 24°C, lows near 16°C and about 136 mm of rain (JMA normals, 1991–2020). Kyoto sits in a basin, so it's a degree or two warmer by day and cooler at dawn.</li>
 <li>Kōyasan (about 870 m) and Rokko (931 m) run 5–8°C cooler. Carry a fleece and a rain shell.</li>
 <li>Typhoons pass within 300 km of Kansai about once each September and 0.7 times each October.</li>
 </ul>
-<div class="warn"><b>Typhoon No. 26.</b> On 26 September it sat south of Okinawa with a very uncertain track, and could reach Honshu in early October. If it comes, trains stop for a day and mountain trails can stay shut for longer after landslides. Check the JMA site and ask your accommodation each morning. Keep a rainy-day plan: the Takenaka museum, a sentō, the markets.</div>
+<div class="warn"><b>Typhoon No. 26.</b> On 26 September it sat south of Okinawa with a very uncertain track, and could reach Honshu in early October. If it comes, trains stop for a day and mountain trails can stay shut for longer after landslides. Check the JMA site and ask your accommodation each morning. Keep a rainy-day plan: the Takenaka museum, Kobe's earthquake museum, the Kyoto National Museum, a sentō, the markets.</div>
 <h4>Dates to plan around</h4>
 <div>
-  <div class="date-row"><b>Sun 27 Sep</b><span>Avoid Minoo. Unexploded-ordnance removal shuts Hankyu Minoo Station and the falls path.</span></div>
+  <div class="date-row"><b>All month</b><span>Deer rut in Nara (September–November). Stags get pushy; see ${GO('nara-deer','deer etiquette')}</span></div>
   <div class="date-row"><b>Sun 4 Oct</b><span>Kishiwada danjiri trial pull, 13:00–17:00. A taster.</span></div>
+  <div class="date-row"><b>From Tue 6 Oct</b><span><b style="color:#18181b">The Tale of Genji</b> special exhibition at the Kyoto National Museum, to 29 November. ¥2,200 (¥2,000 in advance), closed Mondays. The best primer on Heian Kyoto you'll get.</span></div>
   <div class="date-row"><b>Sat 10 Oct</b><span>Kumano Kodo Nakahechi Art Museum reopens in Tanabe after a long refit.</span></div>
   <div class="date-row"><b>10–11 Oct</b><span><b style="color:#18181b">Kishiwada October danjiri.</b> Hill-side districts, so go to JR Hanwa Line stations (Higashi-Kishiwada, Shimomatsu, Kumeda), not Nankai Kishiwada. The floats weigh about four tonnes and corner fast; stand well back.</span></div>
   <div class="date-row"><b>~10–12 Oct</b><span>Tamba-Sasayama Aji Matsuri food festival: black edamame and chestnuts. Confirm dates locally.</span></div>
-  <div class="date-row"><b>Mon 12 Oct</b><span>Sports Day holiday. Trains and inns are busy all weekend, so book ahead.</span></div>
+  <div class="date-row"><b>Mon 12 Oct</b><span>Sports Day holiday. Trains, Kyoto and inns are busy all weekend, so book ahead.</span></div>
   <div class="date-row"><b>Tue 13 Oct</b><span>Takenaka Carpentry Tools Museum closed.</span></div>
-  <div class="date-row"><b>14–15 Oct</b><span><b style="color:#18181b">Nada Fighting Festival</b>, Himeji. Portable shrines rammed together; the 15th is the main day.</span></div>
-  <div class="date-row"><b>7–8 Nov</b><span>Nara's deer antler-cutting moved from October to November in 2025. You'll miss it.</span></div>
-</div>
-<p>Kyoto's Jidai Matsuri and Kurama Fire Festival both fall on 22 October, just after you leave.</p>`},
+  <div class="date-row"><b>14–15 Oct</b><span><b style="color:#18181b">Nada Fighting Festival</b>, Himeji. Portable shrines rammed together; the 15th is the main day. (A different Nada from Kobe's sake district.)</span></div>
+  <div class="date-row"><b>After you leave</b><span>Kyoto's Jidai Matsuri and Kurama Fire Festival (22 Oct); the Shōsōin treasures at the Nara National Museum (late Oct–mid Nov); Nara's deer antler-cutting (7–8 Nov; it moved from October in 2025); Gion Odori dances (early Nov).</span></div>
+</div>`},
 
-{ id:'history', icon:'⛩️', title:'History in five layers', html:`
+{ id:'plan', short:'Two-week plan', grp:'basics', icon:'🗓️', title:'A two-week shape, based in Osaka', html:`
+<p>Osaka sits in the middle: Kobe is 20–30 minutes west, Kyoto 30 east, Nara 40 south-east. Everything below is a day trip except Nara and Kōyasan, where staying the night is the whole point. Basing yourself in Osaka also keeps you clear of Kyoto's new lodging tax, which now runs up to ¥10,000 per person per night.</p>
+<ol>
+<li><b>Days 1–2 (Thu 1–Fri 2 Oct):</b> Osaka neighbourhoods: Tenjinbashisuji, Tenma, Nakanoshima, Shitennō-ji, Sumiyoshi. Finish with a sentō. Let the typhoon pass.</li>
+<li><b>Day 3 (Sat 3):</b> Kobe on foot: Ikuta Jinja, Kitano, the old settlement, Nankinmachi for lunch, Meriken Park at dusk, Kobe beef for dinner. ${GO('kobe-see','Kobe walk')}</li>
+<li><b>Day 4 (Sun 4):</b> Nada brewery museums in the morning, then up to Arima Onsen for a late soak. Rainy? Swap in the Takenaka museum and the earthquake museum.</li>
+<li><b>Days 5–6 (Mon 5–Tue 6):</b> Nara overnight. Heijō Palace site, Kōfuku-ji, the lantern path to Kasuga Taisha, Tōdai-ji, sunset from Nigatsu-dō. Next morning: the park at dawn, Naramachi, then Hōryū-ji on the way home. ${GO('nara-see','Nara route')}</li>
+<li><b>Day 7 (Wed 7):</b> Kyoto, the ancient city: Fushimi Inari before 8 a.m., Tō-ji, then the Genji exhibition.</li>
+<li><b>Day 8 (Thu 8):</b> Kyoto, the Muromachi look: Kinkaku-ji at 9:00, Ryōan-ji, then Ginkaku-ji and the Philosopher's Path down to Nanzen-ji for yudōfu.</li>
+<li><b>Day 9 (Fri 9):</b> Kyoto, court and pleasure quarter: Kiyomizu-dera at 6:00, down Sannenzaka to Gion before the crowds, Nishiki Market, Nijō Castle, an evening in Ponto-chō. ${GO('kyoto-see','Kyoto routes')}</li>
+<li><b>Day 10 (Sat 10):</b> Tamba-Sasayama for black edamame, or Kishiwada.</li>
+<li><b>Day 11 (Sun 11):</b> Kishiwada danjiri main day.</li>
+<li><b>Day 12 (Mon 12, holiday):</b> Uji and Fushimi on one line: Byōdō-in, Uji tea, then the Gekkeikan sake museum. Go early; it's a long weekend.</li>
+<li><b>Days 13–14 (Tue–Wed):</b> Kōyasan temple stay. Or Akashi plus Himeji's Nada festival on the 14th.</li>
+</ol>
+<div class="why"><b>What didn't fit:</b> the Kumano Kodo needs three nights. If the trail matters more to you than Kyoto, give it days 7–9 and see Kyoto's highlights on day 12 instead. Weather beats plans either way; keep one city day spare.</div>`},
+
+{ id:'three', short:'Three cities', grp:'basics', icon:'🗾', title:'Three cities, one story', html:`
+<p>Think of Nara, Kyoto and Kobe as layers of the same story. Nara is where the Japanese state and its Buddhism took shape in the 700s. Kyoto is where the court refined that culture for a thousand years. Kobe is where Japan opened its door to the modern world in 1868. Osaka, where you sleep, is the merchant city that fed and financed all of it. Learn to tell the layers apart on sight and the trip turns into a story you can read; locals notice that.</p>
+<div class="cities">
+  <button class="city" data-action="city" data-val="nara"><span>🦌</span><b>Nara</b> <i class="jp">奈良</i><small>710–784 · the foundations: Tōdai-ji, Kasuga Taisha, the sacred deer</small></button>
+  <button class="city" data-action="city" data-val="kyoto"><span>⛩️</span><b>Kyoto</b> <i class="jp">京都</i><small>794–1869 · the court, Zen, tea, geiko</small></button>
+  <button class="city" data-action="city" data-val="osaka"><span>🏮</span><b>Osaka</b> <i class="jp">大阪</i><small>1600s on · "the nation's kitchen," canals, comedy</small></button>
+  <button class="city" data-action="city" data-val="kobe"><span>⚓</span><b>Kobe</b> <i class="jp">神戸</i><small>1868 on · treaty port, Western villas, beef, Nada sake</small></button>
+</div>
+<h4>Kansai and Kantō</h4>
+<p>${J('関西','Kansai')} means "west of the barrier," after an old checkpoint on the road east. It's the historic heartland: Nara, Kyoto, Osaka and Kobe all sit within about an hour of each other. ${J('関東','Kantō')}, Tokyo's region, only became the centre when Tokugawa Ieyasu set up his government in Edo in 1603. Kansai people tend to see themselves as the older, warmer, funnier, more food-obsessed half of Japan, and they'll enjoy hearing you say so.</p>
+<p>An old saying sums up the rivalry inside Kansai: ${J('京の着倒れ、大阪の食い倒れ','Kyō no kidaore, Ōsaka no kuidaore')}, "Kyoto ruins itself on clothes, Osaka on food." People often add Kobe as ${J('神戸の履き倒れ','Kōbe no hakidaore')}, ruined by shoes, a nod to its fashion and shoe trade.</p>
+<h4>One region, four accents</h4>
+<ul>
+<li><b>Osaka:</b> fast, loud, sing-song. "What are you doing?" is <i>nani shiteru?</i></li>
+<li><b>Kobe:</b> softer Osaka, with its own ending: ${J('何しとん？','nani shiton?')}</li>
+<li><b>Kyoto:</b> slow and soft, with the gentle honorific <i>-haru</i>: ${J('どこ行かはるの？','doko ikaharu no?')} ("where are you off to?")</li>
+<li><b>Nara:</b> close to Osaka's, and less performed.</li>
+</ul>
+<p>${J('おおきに','ōkini')} (thanks) works in all four; it's most at home in Kyoto. Younger people everywhere speak close to standard Japanese with a Kansai lilt.</p>`},
+
+{ id:'history', short:'History', grp:'basics', icon:'📜', title:'History in five layers', html:`
 <p>You don't need all of Japanese history. You need five layers, because in Kansai each one is still standing somewhere you'll walk past.</p>
 <h4>1. The first capitals (500s–700s)</h4>
-<p>Buddhism arrived from the Korean peninsula and China in the 500s, and the Kansai plain became the heart of the country. Osaka, then called ${J('難波','Naniwa')}, was the capital between 683 and 745. Prince Shōtoku founded ${J('四天王寺','Shitennō-ji')} with carpenters brought from the kingdom of Baekje; one of them started ${J('金剛組','Kongō Gumi')} in 578, widely cited as the world's oldest company. It still repairs temples. Nara (710–784), then Kyoto (from 794), took over as capital.</p>
-<h4>2. Shrines and temples, side by side</h4>
-<p>A ${J('神社','jinja')} (shrine, marked by a torii gate) belongs to Shinto, the worship of <i>kami</i>: spirits in mountains, rivers, ancestors, even rice. A ${J('お寺','otera')} (temple: big gate, guardian statues, incense, often a pagoda) is Buddhist. Most people visit both without a second thought. In the Kii Mountains south of Osaka the two fused into mountain pilgrimage, which is why the Kumano Kodo and Yoshino feel so different from city temples.</p>
+<p>Buddhism arrived officially from the Korean kingdom of Baekje in 538 or 552, and the Kansai plain became the heart of the country. Early rulers moved their palace often, sometimes with each new sovereign. Osaka, then called ${J('難波','Naniwa')}, was capital on and off between 683 and 745. Prince Shōtoku founded ${J('四天王寺','Shitennō-ji')} with carpenters brought from Baekje; one of them started ${J('金剛組','Kongō Gumi')} in 578, widely cited as the world's oldest company. It still repairs temples.</p>
+<h4>2. Nara, then Kyoto (710–1868)</h4>
+<p>The moving stopped at Nara. In 710 Empress Genmei founded ${J('平城京','Heijō-kyō')}, a grid city modelled on Tang China's Chang'an. In 784 Emperor Kanmu left for Nagaoka-kyō, south-west of modern Kyoto; that site was abandoned within a decade, amid floods, an assassination and fear of an angry ghost. In 794 he founded ${J('平安京','Heian-kyō')}, "capital of peace and tranquillity," which became Kyoto.</p>
+<p>Why leave Nara? The usual answer is that the Buddhist establishment had grown too close to power. The emblem is the monk Dōkyō, who rose so high under Empress Shōtoku in the 760s that he seemed to be angling for the throne. Kanmu let almost none of Nara's big temples follow him. Money, river transport and his own family politics mattered too, so treat "escaping the monks" as the leading theory among several.</p>
+<p>Kyoto stayed the imperial seat until the Meiji Emperor went to Tokyo in 1868–69. There was never a formal decree moving the capital, a fact some Kyoto people still mention with a smile.</p>
 <h4>3. Castles and the Siege of Osaka (1580s–1615)</h4>
-<p>Toyotomi Hideyoshi unified Japan and built Osaka Castle. After he died, the Tokugawa family destroyed his heirs in 1614–15 and ruled from Edo (Tokyo) for 250 years.</p>
+<p>Toyotomi Hideyoshi unified Japan, built Osaka Castle and rebuilt Kyoto. After he died, the Tokugawa family destroyed his heirs in 1614–15 and ruled from Edo (Tokyo) for 250 years.</p>
 <h4>4. The merchant city (1600s–1860s)</h4>
 <p>This is the layer that explains modern Osaka. The shogunate rebuilt the burned city as a canal-cut trading hub. Lords shipped their tax rice here to sell, and Osaka became ${J('天下の台所','tenka no daidokoro')}, "the nation's kitchen." Samurai ruled in Edo, the court sat in Kyoto, and merchants ran Osaka.</p>
-<h4>5. Industry, war, reinvention (1880s–now)</h4>
-<p>Osaka became a textile and heavy-industry giant, the "Manchester of the East." It was heavily bombed in 1945, hosted the 1970 World Expo, and hosted Expo 2025 on Yumeshima island. Kobe was shaped by its port and by the 1995 Great Hanshin earthquake.</p>
-<div class="why"><b>Why it matters:</b> think of Kansai as three cities with three characters. Kyoto is courtly and indirect. Nara is ancient and small-town. Osaka is the merchant: chatty, funny, blunt, and fond of a bargain. People's manners start to make sense once you see that.</div>`},
+<h4>5. Opening, industry, reinvention (1868–now)</h4>
+<p>Kobe opened as a treaty port on 1 January 1868 and became Japan's window on the West. Osaka turned into a textile and heavy-industry giant, the "Manchester of the East." Both were heavily bombed in 1945; Kyoto largely wasn't. Osaka hosted the 1970 World Expo and Expo 2025. Kobe was rebuilt after the 1995 Great Hanshin earthquake.</p>
+<h4>Dating what you see: a field key</h4>
+${KEY([
+  ['Asuka','飛鳥','538–710','Heavy bracketing, swelling columns, archaic smiling Buddhas.','Hōryū-ji, Nara'],
+  ['Nara','奈良','710–794','Monumental Tang-style halls, huge bronze statues, grid cities.','Tōdai-ji, Kōfuku-ji, Heijō Palace site'],
+  ['Heian','平安','794–1185','Lighter and graceful; Pure Land halls reflected in ponds.','Byōdō-in at Uji, the building on the ¥10 coin'],
+  ['Kamakura','鎌倉','1185–1333','Muscular, realistic sculpture by Unkei and Kaikei. Zen arrives.','Tōdai-ji\'s Nandaimon gate and its guardians (1203)'],
+  ['Muromachi','室町','1336–1573','Zen gardens, tea rooms, tatami rooms with an alcove.','Kinkaku-ji, Ginkaku-ji, Ryōan-ji'],
+  ['Momoyama','桃山','1573–1603','Gold leaf, bold painted screens, castles, Hideyoshi\'s showmanship.','Screen paintings in museums; Arima, Hideyoshi\'s favourite spa'],
+  ['Edo','江戸','1603–1868','Rebuilt temples, merchant townhouses, pleasure quarters, sake guilds.','Nijō Castle, Kiyomizu-dera (1633), the Daibutsuden (1709), Gion'],
+  ['Meiji on','明治','1868–','Brick, stone, Western villas, canals, railways.','Kobe\'s Kitano, Kyoto\'s Lake Biwa Canal, Heian Jingū (1895)']
+])}
+<div class="why"><b>Two traps.</b> A building's founding date is rarely the date of the wood in front of you: Kyoto and Nara burned again and again, so most famous halls are Edo-period rebuilds on ancient plans. And Shinto shrines are rebuilt on purpose. Kasuga Taisha renews its buildings about every 20 years (${J('式年造替','shikinen zōtai')}), so a gleaming shrine can be a very old institution.</div>`},
 
-{ id:'etiquette', icon:'🙇', title:'Etiquette: politeness without panic', html:`
+{ id:'reading', short:'Temples & streets', grp:'basics', icon:'⛩️', title:'What you\'re looking at: shrines, temples, streets', html:`
+<h4>Shrine or temple? The three-second test</h4>
+<ul>
+<li><b>A torii gate</b> (${J('鳥居','torii')}, "bird perch") means a Shinto shrine: ${J('神社','jinja')}, ${J('大社','taisha')} or ${J('神宮','jingū')}. Two posts, one or two crossbeams, often vermilion. Shinto worships <i>kami</i>, the spirits in mountains, rivers, ancestors, even rice. Other clues: a thick straw rope (${J('注連縄','shimenawa')}) hung with zigzag paper, a bell rope, a pair of lion-dogs.</li>
+<li><b>A roofed gate</b> (${J('山門','sanmon')}), often two storeys, sometimes guarded by two fierce kings (${J('仁王','Niō')}), means a Buddhist temple: ${J('寺','-ji')} or ${J('院','-in')}. Other clues: incense burners, graves, pagodas, statues, the smell of ${J('線香','senkō')} incense.</li>
+<li>The Niō and the lion-dogs come in pairs: one mouth open ("a"), one closed ("un"), the first and last sounds of Sanskrit. Everything, beginning to end.</li>
+</ul>
+<p>Many sites mix both. Before 1868, kami and buddhas were worshipped together (${J('神仏習合','shinbutsu shūgō')}). The Meiji government forced them apart (${J('神仏分離','shinbutsu bunri')}), which is why you'll find a torii inside a temple, or a temple that lost half its buildings in the 1870s.</p>
+<h4>Praying, step by step</h4>
+<ul>
+<li><b>Water basin</b> (${J('手水舎','chōzuya')}): ladle in right hand, rinse left; switch, rinse right; pour a little into your cupped left hand and rinse your mouth, lips off the ladle; tip the ladle upright so the rest runs down the handle.</li>
+<li><b>Shrine:</b> coin in the box, ring the bell, then bow twice, clap twice, pray, bow once (${J('二礼二拍手一礼','ni-rei ni-hakushu ichi-rei')}). A ¥5 coin, ${J('ご縁','go-en')}, sounds like "good connection," so it's the classic offering.</li>
+<li><b>Temple:</b> palms together (${J('合掌','gasshō')}), a quiet bow, no clapping. Waft incense smoke toward yourself for good health.</li>
+</ul>
+<h4>The things you'll see</h4>
+<ul>
+<li>${J('狛犬','komainu')}: lion-dogs guarding shrines. At Inari shrines they're foxes (${J('狐','kitsune')}), often holding a granary key or a jewel in their mouths.</li>
+<li>${J('御朱印','goshuin')}: a hand-brushed red seal and calligraphy, collected in a ${J('御朱印帳','goshuin-chō')}. It's proof of a prayer, so visit and pray first, then ask. ¥300–1,000.</li>
+<li>${J('絵馬','ema')}, "picture horse": wooden wish plaques. Shrines were once given real horses; the plaque stands in. Photograph the rack, not someone's wish up close.</li>
+<li>${J('おみくじ','omikuji')}: paper fortunes, from ${J('大吉','daikichi')} (great luck) to ${J('大凶','daikyō')} (great curse). Tie a bad one to the rack to leave the luck behind; keep a good one. Kasuga Taisha's come in the mouth of a little wooden deer.</li>
+<li>${J('五重塔','gojū-no-tō')}: pagodas, descended from Indian stupas, almost always with an odd number of roofs. A central pillar (${J('心柱','shinbashira')}) sways on its own and helps them ride out earthquakes.</li>
+<li>Lanterns: stone and bronze ${J('灯籠','tōrō')} line shrine paths (Kasuga Taisha has about 3,000). Paper ${J('提灯','chōchin')} hang outside shops and teahouses; in Gion they carry the district's crest. Small paper-shaded ${J('雪洞','bonbori')} line paths at festivals.</li>
+</ul>
+<h4>Streets and buildings</h4>
+<ul>
+<li>${J('町家','machiya')}: narrow, deep wooden merchant houses, nicknamed "eel's bedrooms" (${J('鰻の寝床','unagi no nedoko')}) because tax was once charged by street frontage. Look for wooden lattice (${J('格子','kōshi')}), a tiny inner garden, and curved bamboo guards along the base of the wall (${J('犬矢来','inuyarai')}, "dog-keep-away"). Don't lean or sit on them.</li>
+<li>${J('暖簾','noren')}: split cloth curtains over shop doors. Hung out means open; taken in means closed. Part them gently with a hand as you go in.</li>
+<li><b>Castles:</b> sloping stone walls (${J('石垣','ishigaki')}), moats (${J('堀','hori')}), corner turrets (${J('櫓','yagura')}) and the keep (${J('天守','tenshu')}). Nijō Castle in Kyoto lost its keep to lightning in 1750; you can still climb the base.</li>
+</ul>`},
+
+{ id:'etiquette', short:'Etiquette', grp:'basics', icon:'🙇', title:'Etiquette: politeness without panic', html:`
 <p>Almost every rule comes back to ${J('迷惑をかけない','meiwaku o kakenai')}: "don't cause trouble for others." When unsure, watch a local and copy them. A warm ${J('ありがとうございます','arigatō gozaimasu')} forgives a lot.</p>
 <h4>Everyday</h4>
 <ul>
 <li><b>Bowing:</b> a small nod with <i>sumimasen</i> or <i>arigatō</i> is plenty. Take a handshake if one's offered.</li>
 <li><b>Shoes:</b> off wherever you see a raised step (${J('玄関','genkan')}) or tatami. Never step on tatami in slippers. Toilet slippers stay in the toilet.</li>
 <li><b>Phone:</b> silent (<i>manā mōdo</i>), no calls on trains, keep your voice low.</li>
-<li><b>Eating while walking:</b> frowned on in Kyoto and Nara. Osaka's food streets are looser, but stepping aside is always safe.</li>
-<li><b>Rubbish:</b> bins are rare. Carry a small bag; convenience stores and stations have sorted bins.</li>
+<li><b>Eating while walking:</b> frowned on in Kyoto and Nara; Kyoto's Nishiki Market asks you to eat at the stall where you bought it. Osaka's food streets are looser, but stepping aside is always safe.</li>
+<li><b>Rubbish:</b> bins are rare. Carry a small bag; convenience stores and stations have sorted bins. In Nara it matters more: deer die from swallowing plastic.</li>
 <li><b>Tipping:</b> don't. Say ${J('ごちそうさまでした','gochisōsama deshita')} instead.</li>
 <li><b>Giving and receiving:</b> use both hands, for cards, gifts, change.</li>
 </ul>
 <h4>Temples and shrines</h4>
 <ul>
-<li>Bow once at the gate. At a shrine, walk to the side of the central path; it belongs to the <i>kami</i>.</li>
-<li><b>Water basin:</b> ladle in right hand, rinse left hand; switch, rinse right; pour a little into your cupped left hand and rinse your mouth; rinse the left again; tip the ladle up so water runs down the handle. Never drink from the ladle.</li>
-<li><b>Shrine prayer:</b> coin in the box, ring the bell, bow twice, clap twice, pray, bow once (${J('二礼二拍手一礼','ni-rei ni-hakushu ichi-rei')}).</li>
-<li><b>Temple prayer:</b> palms together, quietly. No clapping.</li>
-<li>No photos inside halls unless a sign says so, and never of monks or people praying without asking.</li>
-<li>A ${J('御朱印','goshuin')} (brushed seal, usually ¥300–500) is devotional, not a souvenir stamp. Buy a proper book.</li>
+<li>Bow once at the gate. At a shrine, walk to the side of the central path (${J('正中','seichū')}); it belongs to the <i>kami</i>.</li>
+<li>Shoes off where you see slippers or a step up. Leave tripods at home.</li>
+<li>No photos inside halls unless a sign says so (look for ${J('撮影禁止','satsuei kinshi')}), and never of monks or people praying without asking.</li>
+<li>Washing, praying and goshuin: ${GO('reading','step by step')}</li>
 </ul>
 <h4>Restaurants</h4>
 <ul>
@@ -514,7 +633,7 @@ const guide = [
 </ul>
 <h4>In someone's home</h4>
 <ul>
-<li>Shoes off at the genkan, step straight up. Say ${J('お邪魔します','o-jama shimasu')} going in and ${J('お邪魔しました','o-jama shimashita')} leaving.</li>
+<li>Shoes off at the genkan, step straight up. Say ${J('お邪魔します','o-jama shimasu')} going in and ${J('お邪魔しました','o-jama shimashita')} leaving. The first also works entering a tea room or a tiny shop.</li>
 <li>Wait to be shown a seat; the one farthest from the door is the honour seat.</li>
 <li>Bring a small wrapped gift from home and hand it over with both hands.</li>
 </ul>
@@ -527,24 +646,36 @@ const guide = [
 <li><b>Tattoos:</b> many baths still refuse them. Kinosaki's seven public baths all welcome them. Elsewhere, ask, use cover stickers, or book a private bath (${J('貸切風呂','kashikiri-buro')}).</li>
 </ul>`},
 
-{ id:'food', icon:'🍢', title:'Food: eat like an Osakan', html:`
-<p>A classic meal is rice, miso soup and a few small dishes (${J('一汁三菜','ichijū sansai')}). Portions are small and variety is the point. Eating what's in season, ${J('旬','shun')}, is itself a kind of respect.</p>
-<h4>Osaka's food</h4>
-<p>The motto is ${J('食い倒れ','kuidaore')}: eat until you drop. Cheap, hearty, social.</p>
+{ id:'moving', short:'Getting around', grp:'basics', icon:'🚆', title:'Getting around & settling in', html:`
+<h4>Between the cities</h4>
+<div>
+  <div class="date-row"><b>Osaka ↔ Kobe</b><span>JR Special Rapid to Sannomiya, or Hankyu / Hanshin. 20–30 min.</span></div>
+  <div class="date-row"><b>Osaka ↔ Kyoto</b><span>JR Special Rapid, about 30 min. Hankyu or Keihan are cheaper and land downtown (Kawaramachi, Gion-Shijō), 45–55 min.</span></div>
+  <div class="date-row"><b>Osaka ↔ Nara</b><span>Kintetsu Nara Line from Osaka-Namba, about 40 min.</span></div>
+  <div class="date-row"><b>Kyoto ↔ Nara</b><span>Kintetsu Kyoto Line, or JR Nara Line (Miyakoji Rapid). 35–50 min.</span></div>
+  <div class="date-row"><b>Kyoto ↔ Uji</b><span>JR Nara Line or Keihan. 20–30 min. Fushimi is on the same lines.</span></div>
+  <div class="date-row"><b>Kobe ↔ Arima</b><span>Kobe Electric Railway, about 30 min.</span></div>
+  <div class="date-row"><b>Kobe ↔ Nara</b><span>Hanshin–Kintetsu through trains, Sannomiya to Kintetsu-Nara. 75–80 min.</span></div>
+</div>
+<div class="why"><b>In Nara, use Kintetsu.</b> Kintetsu-Nara station sits much closer to the park than JR Nara; it saves you about 15 minutes' walk each way.</div>
+<h4>Settle in fast</h4>
 <ul>
-<li>${J('お好み焼き','okonomiyaki')}: savoury cabbage pancake. Osaka mixes everything into the batter; many places let you cook it yourself.</li>
-<li>${J('たこ焼き','takoyaki')}: octopus balls. They're molten inside, so wait.</li>
-<li>${J('串カツ','kushikatsu')}: battered, fried skewers. <b>Never double-dip</b> in the shared sauce; scoop more with a cabbage leaf.</li>
-<li>${J('きつねうどん','kitsune udon')}: udon with sweet fried tofu, said to be from Osaka. Kansai broth is pale and kelp-based; Tokyo's is dark and soy-heavy.</li>
-<li>${J('バッテラ','battera')}: pressed mackerel sushi from the merchant era, older than Tokyo's hand-pressed style.</li>
-<li>In Nara and Yoshino, ${J('柿の葉寿司','kakinoha-zushi')}: sushi wrapped in persimmon leaves.</li>
-</ul>
+<li>${J('ICOCA','ikoka')}: the Kansai IC card. Every train and bus above, plus convenience stores. You can add it to Apple Wallet.</li>
+<li><b>Kyoto buses</b> are slow and packed. Use the subway and trains where you can. ${GO('kyoto-gion','Kyoto fares and rules')}</li>
+<li><b>Cash:</b> temples, stalls, small restaurants, rural buses and many bathhouses are cash only. Keep ¥10,000–20,000. 7-Eleven and post-office ATMs take foreign cards.</li>
+<li><b>Konbini:</b> when asked ${J('袋いりますか？','fukuro irimasu ka?')} (bag?), say ${J('大丈夫です','daijōbu desu')} for no.</li>
+<li><b>Luggage:</b> for the Nara or Kōyasan nights, send your big bag ahead with ${J('宅急便','takkyūbin')} from your hotel, or leave it there.</li>
+<li><b>Leaving:</b> Japan's departure tax tripled to ¥3,000 on 1 July 2026. It's normally in your ticket price; tickets issued by 30 June keep the old ¥1,000. Tax-free shopping switches to a refund system in November 2026, after you've gone.</li>
+</ul>`},
+
+{ id:'food', short:'Eating out', grp:'basics', icon:'🍱', title:'Eating out: how it works', html:`
+<p>A classic meal is rice, miso soup and a few small dishes (${J('一汁三菜','ichijū sansai')}). Portions are small and variety is the point. Eating what's in season, ${J('旬','shun')}, is itself a kind of respect. Each city has its own food; see its tab.</p>
 <h4>In season now</h4>
 <ul>
 <li>${J('秋刀魚','sanma')}: saury, grilled whole with salt and grated daikon. The taste of autumn.</li>
 <li>${J('栗','kuri')}: chestnuts, especially from Tamba. Try <i>kuri gohan</i>, chestnut rice.</li>
 <li>${J('黒枝豆','kuro-edamame')}: Tamba-Sasayama's black soybeans, sold green only in October.</li>
-<li>${J('松茸','matsutake')} mushrooms, ${J('柿','kaki')} persimmons, ${J('新米','shinmai')} new-crop rice, and ${J('ひやおろし','hiyaoroshi')}, sake aged through summer.</li>
+<li>${J('松茸','matsutake')} mushrooms, ${J('柿','kaki')} persimmons, ${J('新米','shinmai')} new-crop rice, and ${J('ひやおろし','hiyaoroshi')}, sake aged through summer. Ask for it in Nada and Fushimi.</li>
 <li>Akashi octopus and sea bream, and Minoo's odd snack, ${J('紅葉の天ぷら','momiji no tenpura')}: fried maple leaves.</li>
 </ul>
 <h4>Kinds of place</h4>
@@ -553,6 +684,7 @@ const guide = [
 <li>${J('居酒屋','izakaya')}: pub with small plates. The ${J('お通し','otōshi')} starter arrives unasked and costs a few hundred yen. It's a cover charge, not a scam.</li>
 <li>${J('立ち飲み','tachinomi')}: standing bars. The easiest place in Japan to meet people.</li>
 <li>Ticket-machine shops: buy a ticket at the door, hand it over.</li>
+<li>Kyoto adds ${J('懐石','kaiseki')} and temple food; book those ahead. ${GO('kyoto-eat','Kyoto food')}</li>
 </ul>
 <h4>Ordering, step by step</h4>
 <ol>
@@ -562,15 +694,15 @@ const guide = [
 <li>Ask ${J('おすすめは何ですか？','osusume wa nan desu ka?')} Chefs love it.</li>
 <li>Water is free: ${J('お水ください','omizu kudasai')}.</li>
 <li>Pay: ${J('お会計お願いします','o-kaikei onegai shimasu')}, or cross your index fingers.</li>
-<li>Leave with ${J('ごちそうさまでした','gochisōsama deshita')}. In Osaka, add ${J('おおきに','ōkini')}.</li>
+<li>Leave with ${J('ごちそうさまでした','gochisōsama deshita')}. Anywhere in Kansai, add ${J('おおきに','ōkini')}.</li>
 </ol>
 <div class="why"><b>Heads up:</b> fish stock (dashi) is in almost everything. Vegetarians should ask ${J('出汁に魚は入っていますか？','dashi ni sakana wa haitte imasu ka?')} Carry allergies written in Japanese (the Builder tab can make the sentence).</div>`},
 
-{ id:'wood', icon:'🪚', title:'Woodworking: a wood culture', html:`
+{ id:'wood', short:'Woodworking', grp:'basics', icon:'🪚', title:'Woodworking: a wood culture', html:`
 <p>Japan's building culture is wood. Hōryū-ji in Nara holds the world's oldest surviving wooden buildings, over 1,300 years old, partly because carpenters understood hinoki cypress, which keeps getting stronger long after it's cut. Almost every temple, shrine and festival float you'll see this fortnight is joinery.</p>
 <h4>The traditions</h4>
 <ul>
-<li>${J('木組み','kigumi')}: structural joinery. Posts and beams lock with interlocking cuts instead of nails. The joints flex in earthquakes and can be taken apart for repair.</li>
+<li>${J('木組み','kigumi')}: structural joinery. Posts and beams lock with interlocking cuts instead of nails. The joints flex in earthquakes and can be taken apart for repair. Kiyomizu-dera's stage stands on a lattice of pillars built this way.</li>
 <li>${J('宮大工','miyadaiku')}: temple carpenters. Traditionally about ten years to learn the basics and ten more to master them. Kongō Gumi has looked after Shitennō-ji for more than 1,400 years.</li>
 <li>${J('指物','sashimono')}: furniture joinery, with hidden joints and no nails. Kyoto's style is refined, for court and tea ceremony. Osaka's, ${J('大阪唐木指物','Ōsaka karaki sashimono')}, uses imported rosewood, ebony and quince that came in through Nagasaki and were sold by Osaka's medicine wholesalers. It's about 300 years old and a certified national craft.</li>
 <li>Other Osaka woodcrafts: paulownia chests from around Kishiwada and Sakai, carved transom panels (${J('欄間','ranma')}), and Buddhist altars.</li>
@@ -580,14 +712,15 @@ const guide = [
 <h4>Where to see it</h4>
 ${PL({name:'Takenaka Carpentry Tools Museum', ja:'竹中大工道具館', ro:'Takenaka Daiku Dōgukan', why:'Japan\'s only museum for carpentry tools: over 30,000 items, full-size joinery models and a tea-house frame. The best rainy-day stop in Kansai.', status:'9:30–16:30 (last entry 16:00). Closed Mondays, and closed Tue 13 Oct after the holiday.', how:'5 min walk from Shin-Kobe (about 15 min by shinkansen from Shin-Osaka).', phrase:['すごい技ですね','sugoi waza desu ne','Amazing skill']})}
 ${PL({name:'Shitennō-ji', ja:'四天王寺', ro:'Shitennō-ji', why:'Kongō Gumi\'s 1,400-year job. Look up at the bracket sets under the eaves.', how:'Shitennōji-mae Yūhigaoka (Tanimachi Line).'})}
-${PL({name:'Hōryū-ji', ja:'法隆寺', ro:'Hōryū-ji', why:'The world\'s oldest wooden buildings.', how:'JR Yamatoji Line to Hōryūji, about 40 min from Tennōji.'})}
+${PL({name:'Hōryū-ji', ja:'法隆寺', ro:'Hōryū-ji', why:'The world\'s oldest wooden buildings. More in the Nara tab.', how:'JR Yamatoji Line to Hōryūji, about 40 min from Tennōji.'})}
 ${PL({name:'Kishiwada Danjiri Kaikan', ja:'岸和田だんじり会館', ro:'Kishiwada Danjiri Kaikan', why:'Floats, carvings and festival film. Pair it with 10–11 October.', how:'10 min walk from Nankai Kishiwada.'})}
 ${PL({name:'Karaki sashimono studio visit', ja:'唐木指物', ro:'karaki sashimono', why:'A fourth-generation Osaka artisan demonstrates, then you make a small piece. Costly (from about US$600 via Deeper Japan, booked 7+ days ahead), but a rare way inside a working studio.', how:'Central Osaka, by booking.'})}
 <div class="why"><b>Try with makers:</b> ${J('手作りですか？','tezukuri desu ka?')} (handmade?) and ${J('釘は使っていないんですか？','kugi wa tsukatte inain desu ka?')} (no nails?). Joiners light up at the second.</div>`},
 
-{ id:'kansai', icon:'🌊', title:'Osaka & Kansai: what\'s different here', html:`
+/* ======================= OSAKA ======================= */
+{ id:'osaka', short:'Character', grp:'osaka', icon:'🌊', title:'Osaka: character & the city of water', html:`
 <h4>Character</h4>
-<p>Osakans are known across Japan as friendly, funny and direct. They talk to strangers and like a joke. The city is home to ${J('漫才','manzai')} double-act comedy, and you'll hear the fool-and-straight-man banter (${J('ボケ','boke')} and ${J('ツッコミ','tsukkomi')}) even in shops. Kyoto is the opposite: polite, indirect, famously coded.</p>
+<p>Osakans are known across Japan as friendly, funny and direct. They talk to strangers and like a joke. The city is home to ${J('漫才','manzai')} double-act comedy, and you'll hear the fool-and-straight-man banter (${J('ボケ','boke')} and ${J('ツッコミ','tsukkomi')}) even in shops. Kyoto, 30 minutes away, is the opposite: polite, indirect, famously coded.</p>
 <p>The old merchant greeting is ${J('儲かりまっか？','mōkarimakka?')} ("making money?"), answered ${J('ぼちぼちでんな','bochi-bochi denna')} ("so-so"). It's mostly a joke now, but try <i>bochi-bochi</i> when someone asks how you are. Osakans also love telling you how little they paid. Here, that's a boast.</p>
 <h4>Kansai-ben</h4>
 <p>The local dialect is faster and more sing-song. ${J('おおきに','ōkini')} (thanks), ${J('めっちゃ','meccha')} (very), ${J('ほんま','honma')} (really). Use it for warmth with vendors, bar staff and new friends; switch to standard polite Japanese with monks, front desks and older strangers in formal settings. The Phrases tab has a full Kansai-ben set.</p>
@@ -608,13 +741,6 @@ ${PL({name:'Karaki sashimono studio visit', ja:'唐木指物', ro:'karaki sashim
 <li>Higashi-Osaka: dense streets of small precision workshops.</li>
 <li>Expo 2025's Grand Ring was the largest wooden structure ever built, made with joinery-style connections. Most of it was dismantled from December 2025 and reused around Japan; about 200 m will stay as a memorial. Yumeshima is a construction zone for now, so skip it.</li>
 </ul>
-<h4>Settle in fast</h4>
-<ul>
-<li>${J('ICOCA','ikoka')}: the Kansai IC card. Trains, buses, convenience stores. You can add it to Apple Wallet.</li>
-<li><b>Cash:</b> temples, stalls, small restaurants, rural buses and many bathhouses are cash only. Keep ¥10,000–20,000. 7-Eleven and post-office ATMs take foreign cards.</li>
-<li><b>Konbini:</b> when asked ${J('袋いりますか？','fukuro irimasu ka?')} (bag?), say ${J('大丈夫です','daijōbu desu')} for no.</li>
-<li><b>Luggage:</b> send bags ahead with ${J('宅急便','takkyūbin')} from your hotel on overnight trips.</li>
-</ul>
 <h4>Getting close to people</h4>
 <ul>
 <li><b>Stand at a tachinomi.</b> Tenma, Kyōbashi and Shinsekai have locals elbow to elbow. Say ${J('ここ、いいですか？','koko, ii desu ka?')}, order what your neighbour's having, and you're in.</li>
@@ -622,10 +748,22 @@ ${PL({name:'Karaki sashimono studio visit', ja:'唐木指物', ro:'karaki sashim
 <li><b>Become a regular.</b> Go back to the same kissaten three times. By the third you'll get ${J('まいど！','maido!')}</li>
 <li><b>Go to a sentō.</b> ¥600 in Osaka Prefecture. You'll soak next to grandpas who want to know where you're from.</li>
 <li><b>Ask where locals go:</b> ${J('地元の人はどこに行きますか？','jimoto no hito wa doko ni ikimasu ka?')}</li>
+<li><b>Talk baseball.</b> The Hanshin Tigers are Kansai's team; they won the Japan Series in 2023.</li>
 <li>Osaka has free volunteer "goodwill guides." Pay their transport and lunch.</li>
 </ul>`},
 
-{ id:'osaka-places', icon:'🏮', title:'Places: inside Osaka', html:`
+{ id:'osaka-food', short:'Food', grp:'osaka', icon:'🍢', title:'Osaka: eat like an Osakan', html:`
+<p>The motto is ${J('食い倒れ','kuidaore')}: eat until you drop. Cheap, hearty, social.</p>
+<ul>
+<li>${J('お好み焼き','okonomiyaki')}: savoury cabbage pancake. Osaka mixes everything into the batter; many places let you cook it yourself.</li>
+<li>${J('たこ焼き','takoyaki')}: octopus balls. They're molten inside, so wait.</li>
+<li>${J('串カツ','kushikatsu')}: battered, fried skewers. <b>Never double-dip</b> in the shared sauce; scoop more with a cabbage leaf.</li>
+<li>${J('きつねうどん','kitsune udon')}: udon with sweet fried tofu, said to be from Osaka. Kansai broth is pale and kelp-based; Tokyo's is dark and soy-heavy.</li>
+<li>${J('バッテラ','battera')}: pressed mackerel sushi from the merchant era, older than Tokyo's hand-pressed style.</li>
+</ul>
+<div class="why">The Dining section of the Phrases tab has a menu guide: 24 common dishes, described in plain English.</div>`},
+
+{ id:'osaka-places', short:'Places', grp:'osaka', icon:'🏮', title:'Places: inside Osaka', html:`
 <p>These are where Osaka lives, rather than where it performs.</p>
 ${PL({name:'Tenjinbashisuji shopping street', ja:'天神橋筋商店街', ro:'Tenjinbashi-suji shōtengai', why:'About 2.6 km of covered street, said to be Japan\'s longest: fishmongers, pickle shops, old kissaten, standing bars. It starts at Ōsaka Tenmangū shrine.', how:'Minami-morimachi or Ōgimachi (subway), or JR Tenma.', phrase:['これなんぼ？','kore nanbo?','How much is this? (Kansai)']})}
 ${PL({name:'Tenma & Nakazakichō', ja:'天満・中崎町', ro:'Tenma / Nakazakichō', why:'Tenma\'s alleys pack salarymen into tiny izakaya. Nakazakichō is a pocket of pre-war wooden rowhouses that survived 1945, now cafés and galleries.', how:'JR Tenma, or Nakazakichō (Tanimachi Line). 5 min from Umeda.', phrase:['同じものをください','onaji mono o kudasai','The same as that, please']})}
@@ -634,32 +772,309 @@ ${PL({name:'Sumiyoshi Taisha', ja:'住吉大社', ro:'Sumiyoshi Taisha', why:'He
 ${PL({name:'Nakanoshima & Dōjima', ja:'中之島・堂島', ro:'Nakanoshima / Dōjima', why:'Where the rice trade happened. Find the rice-grain stone, then walk the river promenades. An evening boat on the Ōkawa shows you why the city is laid out this way.', how:'Yodoyabashi or Kitahama.'})}
 ${PL({name:'A neighbourhood sentō', ja:'銭湯', ro:'sentō', why:'The most local hour you\'ll spend in Osaka. Look for the character 湯 on a curtain in any residential street.', how:'Anywhere. ¥600.', phrase:['タトゥーは大丈夫ですか？','tatū wa daijōbu desu ka?','Are tattoos OK?']})}`},
 
-{ id:'trips', icon:'🥾', title:'Places: day trips & overnights', html:`
-<p>Outdoors first, chosen for a real sense of place. Check trail status on the day.</p>
-${PL({name:'Minoo Park & Katsuo-ji', ja:'箕面公園・勝尾寺', ro:'Minō kōen / Katsuō-ji', why:'A forested gorge 30 min from Umeda. A 2.7 km trail (about 40 min) leads to the 33 m Minoo Falls. For a real hike, take the Tōkai Nature Trail up to Katsuo-ji, a temple covered in thousands of daruma dolls (¥500). Don\'t feed the monkeys; it\'s banned.', status:'Fully reopened 7 Aug 2026 after a shop fire, with one narrow section. Avoid Sun 27 Sep.', how:'Hankyu from Osaka-umeda to Ishibashi handai-mae, change to the Minoo Line. 25–30 min.', phrase:['滝まで何分かかりますか？','taki made nanpun kakarimasu ka?','How long to the falls?']})}
-${PL({name:'Mount Rokko to Arima Onsen', ja:'六甲山・有馬温泉', ro:'Rokkō-san / Arima onsen', why:'The 931 m range behind Kobe, hiked by locals since foreign merchants started the habit. Climb from Ashiya via Rock Garden to the summit, then drop into Arima, one of Japan\'s oldest hot-spring towns, with rust-red and clear waters.', status:'Some trails partly closed after storm damage (Kobe list updated 7 Sep). Ashiya Course 7 closed until May 2027. A bear was caught on camera in Kita-ku; avoid dusk and dawn and carry a bell.', how:'Hankyu to Ashiyagawa (about 20 min). Back from Arima by bus or Kobe Electric Railway, about 1 hr.', phrase:['この道は有馬に行けますか？','kono michi wa Arima ni ikemasu ka?','Does this path go to Arima?']})}
+/* ======================= KOBE ======================= */
+{ id:'kobe-story', short:'Story', grp:'kobe', icon:'⚓', title:'Kobe: the port that opened Japan', html:`
+<h4>The name</h4>
+<p>${J('神戸','Kōbe')} is 神 (god) plus 戸 (door, household). People love reading it as "god's door." The real origin is ${J('神戸','kanbe')}, households assigned to support a shrine: here, ${J('生田神社','Ikuta Jinja')}. The Nihon Shoki (720) dates Ikuta's founding to 201 CE under the legendary Empress Jingū, so treat that date as tradition.</p>
+<h4>Timeline</h4>
+${TL([
+  ['3rd c.','Ikuta Shrine founded, by tradition; the area grows up around it.'],
+  ['1100s','Taira no Kiyomori develops the harbour, Hyōgo-tsu, into a hub for the China trade. In 1180 he moves the capital to nearby Fukuhara. It lasts six months.'],
+  ['1700s–1800s','The Nada coast becomes Japan\'s sake powerhouse. By the late Edo period, an estimated 80% of the sake drunk in Edo came from Nada.'],
+  ['1 Jan 1868','Hyōgo opens to foreign trade after a five-year delay; foreign warships fire salutes in the harbour. Two days later the shogunate falls.'],
+  ['Feb 1868','The Kobe Incident: Bizen troops fire on foreigners near the planned settlement, and the foreign powers briefly occupy central Kobe. One of the new Meiji government\'s first crises.'],
+  ['1868–1899','The foreign settlement (外国人居留地) runs itself, with a planned grid, sewers and street lights. Chinese traders, shut out because Japan had no treaty with China, settle just west and found Nankinmachi. Westerners build villas up the hill in Kitano.'],
+  ['1945','US firebombing devastates the city, Nankinmachi included.'],
+  ['17 Jan 1995','5:46 a.m. The Great Hanshin-Awaji Earthquake, 6.9 Mw, ruptures right under the city. 6,434 people die; over 200,000 buildings are damaged or destroyed; about 5 km of the elevated Hanshin Expressway topples.'],
+  ['Since','Rebuilt to tougher codes. Still one of Japan\'s busiest container ports, usually cited as fourth.']
+])}
+<h4>Why the earthquake still matters</h4>
+<p>More than a million volunteers poured in, and 1995 is often called ${J('ボランティア元年','borantia gannen')}, "year one of volunteering." Survivors pushed back against top-down rebuilding plans, and planners had to adopt neighbourhood consultation (${J('まちづくり','machizukuri')}), as UBC geographer David Edgington has documented. You'll see the memory in the 1.17 Torch of Hope in Higashi Yūenchi Park (lit 17 January 2000), in the wrecked quay kept at Meriken Park, and at the Disaster Reduction and Human Renovation Institution. Kobe Luminarie, the light festival that began in December 1995 as a memorial, now runs around January.</p>`},
+
+{ id:'kobe-see', short:'Walk & sights', grp:'kobe', icon:'🏙️', title:'Kobe: a walk, and what you\'ll pass', html:`
+<p><b>Read the map first.</b> Kobe is a long, thin city pinned between Mount Rokkō and the sea. Locals give directions as ${J('山側','yama-gawa')} (mountain side, north) and ${J('海側','umi-gawa')} (sea side, south).</p>
+<h4>The walk, in story order</h4>
+<ol>
+<li>Start at Ikuta Jinja, the reason for the name.</li>
+<li>Walk up to Kitano, where Meiji traders lived, then down Tor Road to the old settlement, where they worked.</li>
+<li>Cross to Nankinmachi for lunch and the story of the excluded Chinese.</li>
+<li>Finish at Meriken Park: the 1868 port, the 1995 quay, the Port Tower at dusk.</li>
+<li>Second day: Hanshin line east to Nada for brewery museums, then up to Arima for a late-afternoon soak.</li>
+<li>Fit in the earthquake museum whenever you can. It frames everything else.</li>
+</ol>
+${PL({name:'Ikuta Jinja', ja:'生田神社', ro:'Ikuta Jinja', why:"A downtown shrine known for matchmaking (縁結び en-musubi); its deity, Wakahirume, is linked to weaving. Rebuilt after the 1945 bombing and again after the 1995 quake.", how:'3 min from Sannomiya.'})}
+${PL({name:'Kitano Ijinkan-gai', ja:'北野異人館街', ro:'Kitano Ijinkan-gai', why:"\"Foreigners' mansions street\": Meiji- and Taishō-era Western houses on the slope above Sannomiya. The best known is the brick Weathercock House (風見鶏の館), built in 1909 for a German merchant. Many charge entry; combination tickets save money.", how:'15 min uphill walk from Sannomiya, or the City Loop bus.'})}
+${PL({name:'The old foreign settlement', ja:'旧居留地', ro:'Kyū-kyoryūchi', why:"Stone and neoclassical offices near the harbour, like the 1929 former National City Bank building (38-bankan). Praised in its day as the best-planned settlement in East Asia; now Kobe's upscale shopping grid.", how:'5–10 min south of Sannomiya.'})}
+${PL({name:'Nankinmachi', ja:'南京町', ro:'Nankinmachi', why:"A compact Chinatown behind the Chōan-mon gate (1985). Queue for pork buns at Rōshōki, open since 1915.", how:'Motomachi station, 3 min.', phrase:['豚まん二つください','butaman futatsu kudasai','Two pork buns, please']})}
+${PL({name:'Meriken Park & the earthquake quay', ja:'メリケンパーク', ro:'Meriken pāku', why:'"Meriken" is how Meiji Japanese heard "American." Look for the red lattice Port Tower (1963) and the Port of Kobe Earthquake Memorial Park, where a stretch of shattered quay is left as it fell.', how:'10 min from Motomachi.'})}
+${PL({name:'Disaster Reduction and Human Renovation Institution', ja:'人と防災未来センター', ro:'Hito to Bōsai Mirai Sentā', why:"The best museum in the city if you want to understand modern Kobe: a film of the quake, survivors' stories, and how the city rebuilt. A strong rainy-day pick.", how:'10 min walk from Hanshin Iwaya.'})}
+${PL({name:'Nada sake breweries', ja:'灘五郷', ro:'Nada Gogō', why:'Five brewing villages along 12 km of coast from Kobe to Nishinomiya. Sixteen breweries offer tours; the Hakutsuru and Kiku-Masamune museums are free or cheap, with tastings. More under Kobe food.', how:'Hanshin Main Line east from Sannomiya: Sumiyoshi, Uozaki, Mikage stations.', phrase:['辛口のお酒をください','karakuchi no osake o kudasai','A dry sake, please']})}
+${PL({name:'Mount Rokko to Arima Onsen', ja:'六甲山・有馬温泉', ro:'Rokkō-san / Arima onsen', why:"The 931 m range behind Kobe, hiked by locals since foreign merchants started the habit (they built Japan's first golf course up here in 1903). Its cold winter wind, the Rokkō oroshi, helps brew Nada sake and names the Hanshin Tigers' fight song. On the north side, Arima is one of Japan's three ancient hot springs, mentioned in the Nihon Shoki and loved by Hideyoshi. Two waters: rust-brown, iron-salty kinsen (金泉, \"gold\") and clear, fizzy ginsen (銀泉, \"silver\"). The public baths Kin no Yu and Gin no Yu let day-trippers try both.", status:'Some trails partly closed after storm damage (Kobe list updated 7 Sep). Ashiya Course 7 closed until May 2027. A bear was caught on camera in Kita-ku; avoid dusk and dawn and carry a bell.', how:'Hike: Hankyu to Ashiyagawa (about 20 min), up via Rock Garden. Arima direct: Kobe Electric Railway, about 30 min from Kobe.', phrase:['この道は有馬に行けますか？','kono michi wa Arima ni ikemasu ka?','Does this path go to Arima?']})}
+<p>Also in Kobe: the ${GO('wood','Takenaka Carpentry Tools Museum')} at Shin-Kobe.</p>`},
+
+{ id:'kobe-eat', short:'Food & sake', grp:'kobe', icon:'🥩', title:'Kobe: beef, sake, bread', html:`
+<h4>Kobe beef</h4>
+<p>${J('神戸ビーフ','Kōbe bīfu')} is a certification label. It must come from Tajima-strain Japanese Black cattle (${J('但馬牛','Tajima-gyū')}) raised in Hyōgo, from a heifer or steer, with a meat-quality score of 4 or higher and marbling (BMS) of at least 6 on a 12-point scale. Certified meat carries the Nojigiku chrysanthemum stamp; certified restaurants usually show a bronze cow statue and can give you a 10-digit ID. The story goes that Meiji-era foreigners in the settlement were the first to eat these work cattle as steak.</p>
+<p>Order ${J('鉄板焼き','teppanyaki')} and pick a cut: ${J('サーロイン','sāroin')} (sirloin) or ${J('ヒレ','hire')} (tenderloin). "Wagyu" signs around Sannomiya can mean other beef, so ask:</p>
+<p>${J('神戸ビーフの証明書はありますか？','Kōbe bīfu no shōmeisho wa arimasu ka?')} — "Do you have the Kobe beef certificate?"</p>
+<h4>Nada sake</h4>
+<p>The ${J('灘五郷','Nada Gogō')}, "five villages of Nada," are Nishi-gō, Mikage-gō, Uozaki-gō, Nishinomiya-gō and Imazu-gō. Four things made them great: ${J('宮水','miyamizu')}, mineral-rich, iron-poor well water found around 1840 in Nishinomiya; Yamada Nishiki rice from inland Hyōgo; the cold Rokkō wind; and master brewers from Tamba. The style is ${J('男酒','otoko-zake')}, "masculine sake": dry, crisp and robust. Kyoto's Fushimi makes the soft counterpart. Ask a local which they prefer.</p>
+<h4>Bread and sweets</h4>
+<p>Foreign bakers seeded Kobe's bakery scene, including Germans held here as prisoners in World War I. Juchheim brought ${J('バウムクーヘン','baumukūhen')}, and Freundlieb still bakes. Every local has a favourite ${J('パン屋さん','pan-ya-san')}.</p>
+<h4>Street and home food</h4>
+<ul>
+<li>${J('豚まん','butaman')}: pork buns from Nankinmachi. Rōshōki claims it coined the name. Try gyoza with miso sauce while you're there.</li>
+<li>${J('そばめし','sobameshi')}: fried noodles chopped into fried rice, from Nagata ward.</li>
+<li>${J('ぼっかけ','bokkake')}: stewed beef tendon and konjac.</li>
+<li>${J('明石焼','akashiyaki')}: eggy octopus dumplings dipped in broth, from Akashi just west.</li>
+</ul>`},
+
+{ id:'kobe-people', short:'Fitting in', grp:'kobe', icon:'💬', title:'Kobe: fitting in', html:`
+<p>Kobe's self-image is ${J('ハイカラ','haikara')}, "high collar," the Meiji word for stylish and Westernised. Locals see themselves as cosmopolitan, relaxed and a little more refined than Osaka, and they'll say they're "from Kobe," never "from Hyōgo." The city is proud of its old foreign communities; Japan's first mosque opened here in 1935.</p>
+<p>Kobe-ben sounds like softer Osaka speech, with ${J('〜とん','-ton')} where Osaka says <i>-teru</i>: ${J('何しとん？','nani shiton?')}, "what're you up to?"</p>
+<h4>Phrases for Kobe</h4>
+${PB([
+  ['神戸ビーフの証明書はありますか？','Kōbe bīfu no shōmeisho wa arimasu ka?','Do you have the Kobe beef certificate?'],
+  ['おすすめは何ですか？','osusume wa nan desu ka?','What do you recommend?'],
+  ['辛口のお酒をください','karakuchi no osake o kudasai','A dry sake, please'],
+  ['山側はどっちですか？','yama-gawa wa dotchi desu ka?','Which way is the mountain side?'],
+  ['何しとん？','nani shiton?','What\'re you up to? (Kobe-ben, casual)'],
+  ['めっちゃおいしい！','meccha oishii!','Seriously delicious!'],
+  ['ほんま？','honma?','Really?']
+])}
+${TALK([
+  '"Which bakery would you defend to the death?"',
+  '"Do you drink Nada sake, or something from elsewhere?"',
+  '"Kitano or Motomachi: where do you actually hang out?"',
+  '"Are you a Tigers fan?"'
+], 'many residents lost family in 1995. Let them raise the earthquake, or ask quietly whether they go to the memorial on 17 January. Keep current China–Japan politics out of Nankinmachi.')}
+<h4>At Arima's baths</h4>
+<p>Wash fully at the seated shower first, keep your small towel out of the water, no swimsuits, tie up long hair. Tattoo rules vary, so check ahead or book a ${J('貸切風呂','kashikiri-buro')}.</p>`},
+
+/* ======================= NARA ======================= */
+{ id:'nara-story', short:'Story', grp:'nara', icon:'🏯', title:'Nara: where it all started', html:`
+<h4>The name</h4>
+<p>The kanji ${J('奈良','Nara')} were picked for sound, and the name has been written a dozen ways (寧楽, 平城, 楢). The best-supported theory, from folklorist Kunio Yanagita (1936), links it to <i>nara</i>, flat land, related to ${J('均す','narasu')}, "to level." The Nihon Shoki has a folk version where soldiers flatten the grass on Nara-yama. The old capital's name, ${J('平城京','Heijō-kyō')}, is 平 (flat, peace) + 城 (citadel) + 京 (capital).</p>
+<h4>Timeline</h4>
+${TL([
+  ['538 or 552','Buddhism arrives officially from Baekje. The Soga clan champions it and beats rival clans.'],
+  ['607','Prince Shōtoku and Empress Suiko found Hōryū-ji. After a fire in 670 it was rebuilt, and its Kondō and five-storey pagoda (late 600s) are the world\'s oldest surviving wooden buildings. Shōtoku is partly legendary; later chronicles likely inflated his deeds.'],
+  ['710','Empress Genmei founds Heijō-kyō. The Fujiwara clan moves its temple, Kōfuku-ji, here the same year.'],
+  ['741','Emperor Shōmu orders a state temple in every province, with Tōdai-ji at the top.'],
+  ['743–752','The Great Buddha, a Vairocana about 15 m tall, is cast. At the 752 eye-opening, led by the Indian monk Bodhisena, some 10,000 monks reportedly attend. Gifts from Persia and Tang China survive in the Shōsōin storehouse.'],
+  ['768',`Kasuga Taisha is built as the Fujiwara shrine. Legend says the thunder god Takemikazuchi rode a white deer here from Kashima, which is why the deer are sacred messengers (${J('神使','shinshi')}).`],
+  ['784',`The capital leaves. Nara becomes ${J('南都','Nanto')}, the "southern capital," a city of temples; Kōfuku-ji and its armed monks effectively govern the province for centuries.`],
+  ['1180','Taira forces burn Tōdai-ji and Kōfuku-ji. The monk Chōgen leads the rebuild; the Nandaimon gate and its guardians by Unkei and Kaikei (1203) date from then.'],
+  ['1709','The current Great Buddha Hall is finished: two-thirds the width of the original and still one of the world\'s largest wooden buildings.'],
+  ['1870s','The Shinto–Buddhist split hits Kōfuku-ji hard. A much-repeated story, of doubtful accuracy, says its pagoda was nearly sold for firewood.'],
+  ['1880','Nara Park is laid out on former Kōfuku-ji land. It now covers about 502 hectares.'],
+  ['1993, 1998','Hōryū-ji becomes one of Japan\'s first two World Heritage sites (with Himeji Castle). The "Historic Monuments of Ancient Nara" follow in 1998.']
+])}`},
+
+{ id:'nara-deer', short:'Deer', grp:'nara', icon:'🦌', title:'Nara: the deer, properly', html:`
+<p>In July 2025 the Nara Deer Preservation Foundation counted 1,465 deer (315 stags, 816 does, 334 fawns), beating the 2019 record of 1,388 and rising for a fourth straight year. The foundation links the boom to tourists feeding more crackers. A study found the park's lawns can support only about 780. Nara Prefecture counted 159 visitor injuries from deer in fiscal 2024, 111 of them foreign tourists, and 72 traffic accidents involving deer in the year to mid-2025. Deer have died from swallowing plastic bags.</p>
+<h4>Deer etiquette</h4>
+<ul>
+<li>Feed only ${J('鹿せんべい','shika senbei')}, the official crackers, about ¥200 a bundle; part of the price supports the foundation. Never human food.</li>
+<li>Hand crackers over promptly. Teasing causes most bites: about 72.5% of incidents in fiscal 2022 happened around feeding.</li>
+<li>When you're out, show both empty palms and say ${J('もうないよ','mō nai yo')}. Most deer read it and wander off.</li>
+<li>Deer bow as a learned trick. Bow back, then give the cracker.</li>
+<li><b>October is rut.</b> Stags are aggressive now; give antlered males room and don't get between a stag and a doe.</li>
+<li>Hide paper maps and tickets. Deer eat paper.</li>
+<li>Take all your rubbish with you.</li>
+</ul>
+<div class="why"><b>The antler-cutting</b> (${J('鹿の角きり','shika no tsunokiri')}) at the Rokuen deer enclosure protects people during rut. It moved to early November in 2025, so you'll probably miss it, but it's a good thing to ask a local about.</div>`},
+
+{ id:'nara-see', short:'Route & sights', grp:'nara', icon:'🛕', title:'Nara: a route, and what you\'ll pass', html:`
+<h4>Two days, in story order</h4>
+<ol>
+<li>Start at the Heijō Palace site to grasp the capital's scale.</li>
+<li>Kōfuku-ji for the Fujiwara, then along the lantern path to Kasuga Taisha, their shrine.</li>
+<li>Down to Tōdai-ji, the emperor's state project, and up to Nigatsu-dō at sunset.</li>
+<li>Next morning, the park at dawn (the deer are calm, the buses haven't arrived), then Naramachi and Nakatanidō.</li>
+<li>Half a day for Hōryū-ji, where the story begins, a century before Nara.</li>
+</ol>
+${PL({name:'Heijō Palace site', ja:'平城宮跡', ro:'Heijō-kyū seki', why:'A huge open field with the rebuilt Suzaku Gate and the Audience Hall (2010). It gives you the scale of the old grid. Free.', how:'20 min walk from Kintetsu Yamato-Saidaiji, or bus from Kintetsu-Nara.'})}
+${PL({name:'Kōfuku-ji', ja:'興福寺', ro:'Kōfuku-ji', why:"The Fujiwara family temple. Its five-storey pagoda (first built 730, burned five times, rebuilt 1426) is wrapped for restoration until about 2031 (the temple's estimate) or 2034 (Japan Guide's), so you won't see it this trip. Go for the National Treasure Museum and the three-faced, six-armed Ashura statue from 734.", how:'5 min from Kintetsu-Nara.'})}
+${PL({name:'Kasuga Taisha', ja:'春日大社', ro:'Kasuga Taisha', why:'Vermilion corridors and about 3,000 lanterns, all lit at the Mantōrō festivals in early February and mid-August. Behind it lies the Kasugayama Primeval Forest, protected from logging for about 1,200 years. Get an omikuji from a wooden deer.', how:'25 min walk east from Kintetsu-Nara through the park.'})}
+${PL({name:'Tōdai-ji & Nigatsu-dō', ja:'東大寺・二月堂', ro:'Tōdai-ji / Nigatsu-dō', why:"\"Great Eastern Temple.\" Walk through the Nandaimon past the 1203 guardians, into the Great Buddha Hall. Squeeze through the pillar with a hole the size of the Buddha's nostril for enlightenment (it's a squeeze). Then walk up to Nigatsu-dō for a free view at sunset; it hosts the Omizutori fire ritual each March.", status:'Adults ¥800. Great Buddha Hall 7:30–17:30 (April–October), 8:00–17:00 (November–March).', how:'20 min walk from Kintetsu-Nara.', phrase:['東大寺はどう行けばいいですか？','Tōdai-ji wa dō ikeba ii desu ka?','How do I get to Tōdai-ji?']})}
+${PL({name:'Naramachi', ja:'奈良町', ro:'Naramachi', why:'The old merchant quarter south of Sarusawa Pond. The red cloth monkeys hanging from the eaves are 身代わり猿 (migawari-zaru), "substitute monkeys" that take misfortune in your place.', how:'10 min south of Kintetsu-Nara.'})}
+${PL({name:'Hōryū-ji', ja:'法隆寺', ro:'Hōryū-ji', why:'The world\'s oldest wooden buildings, from the late 600s, in the Asuka style: heavy brackets, swelling columns, archaic smiling Buddhas. Compare them in your head with Tōdai-ji.', how:'JR to Hōryūji station then bus or 20 min walk. On the JR line back toward Osaka.'})}
+${PL({name:'Asuka & Yagyū', ja:'明日香・柳生', ro:'Asuka / Yagyū', why:'Asuka is the rural valley of Japan\'s first capitals: rice terraces, strange stone monuments and burial mounds, best by bike. Early October means golden rice. Yagyū is the mountain home of a famous sword school, reached by an old forest road.', how:'Asuka: Kintetsu from Osaka-Abenobashi, 45–50 min. Yagyū: bus from Kintetsu Nara, or hike the Yagyū Kaidō (about 15 km).', phrase:['自転車を借りたいです','jitensha o karitai desu','I\'d like to rent a bike']})}`},
+
+{ id:'nara-eat', short:'Food & fitting in', grp:'nara', icon:'🍃', title:'Nara: food & fitting in', html:`
+<h4>What to eat</h4>
+<ul>
+<li>${J('柿の葉寿司','kakinoha-zushi')}: mackerel or salmon pressed onto rice and wrapped in a persimmon leaf, whose tannins kept fish fresh on the trip inland. Unwrap it; the leaf stays on the plate.</li>
+<li>${J('奈良漬','narazuke')}: vegetables, usually white melon, pickled for months in sake lees. Deep brown, sweet, boozy. Take a sliver with rice.</li>
+<li>${J('葛','kuzu')}: kudzu-root starch, best from Yoshino. You'll meet it as ${J('葛餅','kuzumochi')} or clear ${J('葛切り','kuzukiri')} noodles in black-sugar syrup.</li>
+<li>Nakatanidō's ${J('よもぎ餅','yomogi mochi')}: mugwort rice cakes with red-bean paste, pounded at dramatic speed on Sanjō-dōri. Eat them warm, on the spot.</li>
+<li><b>Nara sake:</b> Nara claims to be a birthplace of refined sake. In the Muromachi period, monks at Shōryaku-ji developed a starter called ${J('菩提酛','bodaimoto')}, and several breweries have revived it. Ask for it by name.</li>
+<li>${J('三輪素麺','Miwa sōmen')}, fine noodles from Sakurai, and ${J('茶粥','chagayu')}, rice porridge cooked in tea.</li>
+</ul>
+<div class="why"><b>The joke to know:</b> ${J('奈良にうまいものなし','Nara ni umai mono nashi')}, "nothing tasty in Nara," usually pinned on the novelist Shiga Naoya, who lived there. Locals know it and like to prove it wrong. Tell them it was ${J('おいしかった','oishikatta')}.</div>
+<h4>Local character</h4>
+<p>Nara is quieter and more small-town than Kyoto; many residents commute to Osaka. People are proud of their head start ("we were the capital first") and a bit tired of being treated as a half-day side trip. Staying a night is the best way to show respect.</p>
+<h4>Phrases for Nara</h4>
+${PB([
+  ['鹿せんべいをください','shika senbei o kudasai','Deer crackers, please'],
+  ['もうないよ','mō nai yo','I don\'t have any more (to a deer, palms open)'],
+  ['御朱印をお願いできますか？','goshuin o onegai dekimasu ka?','May I request a goshuin?'],
+  ['写真を撮ってもいいですか？','shashin o tottemo ii desu ka?','May I take a photo?'],
+  ['いただきます','itadakimasu','Said before eating'],
+  ['ごちそうさまでした','gochisōsama deshita','Said after eating'],
+  ['あかん','akan','No good / don\'t (Kansai)'],
+  ['なんでやねん！','nande ya nen!','Why on earth?! (the comedy retort; use it playfully)']
+])}
+${TALK([
+  '"Where do locals go to escape the deer crowds?"',
+  '"Mackerel or salmon kakinoha-zushi?"',
+  '"I heard Nara sake started at Shōryaku-ji. Is that true?"',
+  '"Do you go to the antler-cutting?"'
+], 'locals care deeply about the deer and don\'t want lectures from tourists on welfare or on controlling numbers. Ask what they think before you share an opinion.')}`},
+
+/* ======================= KYOTO ======================= */
+{ id:'kyoto-story', short:'Story', grp:'kyoto', icon:'🏯', title:'Kyoto: a thousand years of capital', html:`
+<h4>The name</h4>
+<p>${J('京都','Kyōto')} is 京 (capital) + 都 (metropolis). Both mean "capital," so the name is "capital-capital"; old documents just say ${J('都','miyako')}. Locals still speak of going up to Kyoto as ${J('上洛','jōraku')}, from <i>raku</i>, borrowed from the Chinese capital Luoyang. Central Kyoto is ${J('洛中','rakuchū')}; the outskirts are ${J('洛外','rakugai')}.</p>
+<h4>Timeline</h4>
+${TL([
+  ['Before 794','Immigrant clans like the Hata develop the basin; by tradition they found Fushimi Inari in 711. Kiyomizu-dera traces itself to 778.'],
+  ['794','Emperor Kanmu founds Heian-kyō, about 5.2 by 4.5 km, split by Suzaku Avenue. The marshy west soon empties, so the city drifts east toward the Kamo River.'],
+  ['794–1185','Court culture peaks. The Tale of Genji is written here around 1008. The Gion Festival starts in 869 as a rite against plague.'],
+  ['1336–1573','The Ashikaga shoguns rule from Kyoto. Kinkaku-ji begins as a retirement villa in 1397, Ginkaku-ji in 1482. Tea, Noh, ikebana and rock gardens take shape.'],
+  ['1467–1477',`The Ōnin War burns most of the city. Western Army troops camped in the north-west give the weaving district its name, ${J('西陣','Nishijin')}, "western camp." Kyoto people joke that "the last war" means this one.`],
+  ['1580s–90s','Hideyoshi rebuilds the city, cuts blocks into long narrow lots and rings it with an earthen wall.'],
+  ['1603','Tokugawa Ieyasu builds Nijō Castle as his Kyoto base.'],
+  ['1867','In Nijō Castle, the last shogun announces the return of power to the emperor.'],
+  ['1868–69','The emperor leaves for Tokyo, and Kyoto\'s population drops sharply.'],
+  ['1890–1895','The city fights back: the Lake Biwa Canal powers Japan\'s first commercial hydroelectric plant (1891), which runs Japan\'s first electric streetcar (1895). Heian Jingū is built as a scaled replica of the old palace hall.'],
+  ['1945','Kyoto tops the US atomic target list in May. Secretary of War Henry Stimson insists it\'s removed; the popular "honeymoon" story is a myth, as historian Alex Wellerstein has shown. A few small air raids still hit.'],
+  ['1994','17 sites become the "Historic Monuments of Ancient Kyoto."'],
+  ['2024–2025','A record 10.88 million foreign visitors in 2024, then 12.68 million in 2025.'],
+  ['2026','Lodging-tax rise (1 March); two-tier bus fares announced for fiscal 2027.']
+])}
+<h4>Why so many temples?</h4>
+<p>Roughly 1,600 temples and 400 shrines, by common estimates. Three things stack up: 1,000 years of imperial and aristocratic money; the headquarters of most major Buddhist sects; and relatively little destruction since 1600. Temple signs name the sect, like ${J('浄土宗','Jōdo-shū')} or ${J('臨済宗','Rinzai-shū')}. Zen temples usually have raked-gravel gardens (${J('枯山水','karesansui')}).</p>
+<h4>Reading a Kyoto address</h4>
+<p>Downtown still follows the Heian grid. Locals name the nearest crossing, then the direction from it:</p>
+<ul>
+<li>${J('上ル','agaru')}, "going up," is north. The palace sat at the north, so north is up.</li>
+<li>${J('下ル','sagaru')}, "going down," is south.</li>
+<li>${J('西入ル','nishi-iru')} is "enter westward"; ${J('東入ル','higashi-iru')} is eastward.</li>
+</ul>
+<p>So ${J('烏丸通四条上ル','Karasuma-dōri Shijō agaru')} means "on Karasuma, just north of Shijō." Children learn the east–west streets with a song, ${J('丸竹夷二押御池','Maru Take Ebisu Ni Oshi Oike')}, from Marutamachi south to Oike. Hum the first line to a Kyoto person and watch their face.</p>`},
+
+{ id:'kyoto-see', short:'Routes & sights', grp:'kyoto', icon:'⛩️', title:'Kyoto: routes, and the big sites read right', html:`
+<h4>Five themed days (pick three)</h4>
+<ol>
+<li><b>The ancient city:</b> Fushimi Inari at dawn (the pre-Heian Hata layer), then Tō-ji, Kanmu's gate temple, still on its original site, with Japan's tallest wooden pagoda. Finish at the Kyoto National Museum.</li>
+<li><b>Court and shogun:</b> Kyoto Imperial Palace, then Nijō Castle, emperor and shogun side by side; south through Nishiki Market and the downtown machiya.</li>
+<li><b>The Muromachi look:</b> Kinkaku-ji at opening, Ryōan-ji's rock garden nearby. Afternoon at Ginkaku-ji, down the Philosopher's Path to Nanzen-ji for yudōfu and the brick Meiji aqueduct.</li>
+<li><b>Edo pleasure quarter:</b> Kiyomizu-dera at 6 a.m., down Sannenzaka to Yasaka Shrine and Gion before the crowds, then Ponto-chō in the evening.</li>
+<li><b>South:</b> Uji (Byōdō-in, tea) and Fushimi (sake) on the same line.</li>
+</ol>
+<div class="why"><b>Timing:</b> hit famous places at opening, spend midday in quiet neighbourhoods (Demachiyanagi, Nishijin, Kamishichiken), and go back to Gion after the dinner rush.</div>
+<p class="ro" style="font-size:13px">Fees and hours checked September 2026 where possible; they change often.</p>
+${PL({name:'Fushimi Inari Taisha', ja:'伏見稲荷大社', ro:'Fushimi Inari Taisha', why:'Head shrine of Inari, kami of rice and business. The thousands of vermilion torii are donations from companies and people; the black writing on the back gives the donor\'s name and date. The full mountain loop takes 2–3 hours, and the crowds thin out past the halfway point.', status:'Free, open around the clock. Go before 8 a.m. or after dark.', how:'JR Inari station, 5 min from Kyoto Station.'})}
+${PL({name:'Tō-ji', ja:'東寺', ro:'Tō-ji', why:'One of the two official temples Kanmu built at the city gate in 794, still on its original site. Its five-storey pagoda is Japan\'s tallest wooden one.', how:'15 min walk from Kyoto Station, or Kintetsu Tōji.'})}
+${PL({name:'Kyoto National Museum', ja:'京都国立博物館', ro:'Kyōto Kokuritsu Hakubutsukan', why:'From 6 October to 29 November 2026: The Tale of Genji: Radiant Culture of the Japanese Imperial Court. If your trip overlaps, it\'s the best primer on Heian Kyoto you\'ll get.', status:'¥2,200 (¥2,000 in advance). Closed Mondays.', how:'Keihan Shichijō, 7 min.'})}
+${PL({name:'Kiyomizu-dera', ja:'清水寺', ro:'Kiyomizu-dera', why:'"Pure water temple." The wooden stage juts over the valley on a lattice of pillars built without nails; the main hall is a 1633 rebuild. "To jump from the Kiyomizu stage" (清水の舞台から飛び降りる) means to take a big plunge. Walk up via Sannenzaka and Ninenzaka.', status:'Opens 6:00; closes 18:00 most of the year. About ¥500.', how:'Keihan Kiyomizu-Gojō, then 25 min uphill; or bus to Gojōzaka.', phrase:['きれいどすなぁ','kirei dosu nā','How beautiful (old Kyoto style, said with a smile)']})}
+${PL({name:'Kinkaku-ji, the Golden Pavilion', ja:'金閣寺', ro:'Kinkaku-ji', why:'Formally Rokuon-ji. Three floors, three styles: palace, samurai house, Zen temple. A monk burned it in 1950, a story Yukio Mishima turned into a novel; today\'s building dates from 1955.', status:'¥500, 9:00–17:00.', how:'Bus from Kitaōji subway station, or taxi. Pair with Ryōan-ji\'s rock garden, 20 min walk.'})}
+${PL({name:'Ginkaku-ji, the Silver Pavilion', ja:'銀閣寺', ro:'Ginkaku-ji', why:'Formally Jishō-ji. It was never covered in silver. It\'s the cradle of wabi-sabi and of the tatami-and-alcove room. Look for the flat-topped sand cone, the kōgetsudai. Then walk the Philosopher\'s Path south, named for Nishida Kitarō.', status:'¥1,000 (older guides say ¥500). 8:30–17:00 March–November.', how:'Bus to Ginkakuji-michi.'})}
+${PL({name:'Nijō Castle', ja:'二条城', ro:'Nijō-jō', why:'Tokugawa power in Kyoto, where the last shogun gave it all back in 1867. Listen for the "nightingale floors" (鶯張り uguisubari) that chirp underfoot in the Ninomaru Palace. No photos inside.', status:'Castle plus Ninomaru Palace ¥1,300. 8:45–16:00, grounds to 17:00. The Honmaru Palace needs a reservation and another ¥1,000.', how:'Nijōjō-mae (Tōzai Line).'})}
+${PL({name:'Kyoto Imperial Palace', ja:'京都御所', ro:'Kyōto Gosho', why:'Free, open most days without booking. A quiet way to see the old court.', how:'Imadegawa or Marutamachi (Karasuma Line).'})}
+${PL({name:'Uji', ja:'宇治', ro:'Uji', why:'Home of Byōdō-in and its 1053 Phoenix Hall, the building on the back of the ¥10 coin; Japan\'s most prestigious green tea; and the setting of Genji\'s last chapters.', how:'JR Nara Line or Keihan, 20–30 min.', phrase:['抹茶をお願いします','matcha o onegai shimasu','Matcha, please']})}
+<h4>Also on your way</h4>
+<ul>
+<li><b>The Kamo River</b> (${J('鴨川','Kamogawa')}): couples sit evenly spaced along the bank, which locals call the "Kamogawa equal-spacing law." Ponto-chō restaurants build summer decks over it (${J('川床','kawayuka')}).</li>
+<li><b>Machiya</b> all over Nakagyō and Higashiyama. Many are shops, inns and restaurants now; a preservation win and a gentrification worry at once.</li>
+<li><b>Nishijin:</b> workshops weaving Nishijin-ori brocade for kimono and obi. Listen for looms.</li>
+</ul>`},
+
+{ id:'kyoto-gion', short:'Gion & rules', grp:'kyoto', icon:'🏮', title:'Kyoto: Gion, geiko & the new rules', html:`
+<h4>Geiko, maiko and the five districts</h4>
+<p>Kyoto has five ${J('花街','kagai')}, "flower towns": Gion Kōbu, Gion Higashi, Miyagawa-chō, Ponto-chō and Kamishichiken, the oldest. Kyoto says ${J('芸妓','geiko')}, "arts woman," and apprentices are ${J('舞妓','maiko')}, "dance child." They're professional performers of dance, music and conversation. Their teahouses (${J('お茶屋','ochaya')}) work by introduction only: ${J('一見さんお断り','ichigen-san okotowari')}, "no first-timers." To see them perform, go to a public dance (Miyako Odori in April, Gion Odori in early November, both outside your dates) or book a maiko dinner through your hotel or a reputable agency.</p>
+<h4>Photos and access in Gion</h4>
+<ul>
+<li>Since October 2019, residents have banned photography on Gion's private lanes (${J('私道','shidō')}), with a posted fine of ¥10,000.</li>
+<li>Since April 2024, some lanes off Hanami-kōji, like Kosode Kōji, carry signs: "Private Road Do Not Enter. Fine up to ¥10,000." These are rules set by the Gion residents' council, not city law. Treat them as absolute anyway.</li>
+<li>Hanami-kōji itself is a public street, and you can photograph it.</li>
+<li>Photographing a geiko or maiko needs permission. In practice, let them pass. They're working and often late. Don't touch their kimono, block their path or follow them.</li>
+<li>Keep off the bamboo wall guards, leave the lanterns alone, and don't smoke on the street.</li>
+</ul>
+<h4>What overtourism costs you</h4>
+<ul>
+<li><b>Lodging tax</b> (${J('宿泊税','shukuhaku-zei')}) since 1 March 2026, per person per night: under ¥6,000 → ¥200; ¥6,000–19,999 → ¥400; ¥20,000–49,999 → ¥1,000; ¥50,000–99,999 → ¥4,000; ¥100,000 and up → ¥10,000. It's Japan's highest. Sleeping in Osaka avoids it.</li>
+<li><b>City buses:</b> still a flat ¥230 in the centre. A two-tier fare (about ¥350–400 for visitors, ¥200 for residents) is planned for fiscal 2027, pending national approval. The bus-only day pass ended in 2023; the Subway & Bus One-Day Pass (¥1,100) remains. Officials admit the fare alone won't fix the crush, so take the subway and trains; they're faster anyway.</li>
+<li><b>Nishiki Market:</b> eat at the stall where you bought it, not while walking.</li>
+</ul>`},
+
+{ id:'kyoto-eat', short:'Food & tea', grp:'kyoto', icon:'🍵', title:'Kyoto: food, tea & sake', html:`
+<ul>
+<li>${J('懐石','kaiseki')}: two words sound the same. 懐石, "stone in the robe," from monks warming stones against hunger, is the tea-ceremony meal; 会席, "gathering seat," is the banquet version. Multi-course, seasonal, built on dashi. Book ahead and state allergies in advance.</li>
+<li>${J('精進料理','shōjin ryōri')}: temple vegetarian food, heavy on tofu and ${J('湯葉','yuba')} (tofu skin).</li>
+<li>${J('湯豆腐','yudōfu')}: tofu simmered in kelp broth, the Nanzen-ji speciality.</li>
+<li>${J('おばんざい','obanzai')}: Kyoto home cooking. Small seasonal dishes built on ${J('京野菜','kyō-yasai')}, heirloom vegetables like Kamo eggplant and Kujō leek.</li>
+<li>Pickles: the big three are ${J('千枚漬け','senmaizuke')} (thin-sliced turnip, winter), ${J('しば漬け','shibazuke')} (purple, with shiso) and ${J('すぐき漬け','sugukizuke')} (sour turnip). Nishiki Market sells all three.</li>
+<li>${J('鯖寿司','saba-zushi')}: mackerel sushi, carried along the old "mackerel road" from the Sea of Japan. And ${J('にしんそば','nishin soba')}, herring soba.</li>
+<li>${J('八ツ橋','yatsuhashi')}: cinnamon rice-flour sweets, crisp or soft (${J('生八ツ橋','nama yatsuhashi')}) and folded around bean paste. Rival shops tell rival origin stories.</li>
+</ul>
+<h4>Tea</h4>
+<p>Try ${J('抹茶','matcha')}, ${J('玉露','gyokuro')} (shade-grown and sweet) and ${J('ほうじ茶','hōjicha')} (roasted); Uji grows the best. At a tea ceremony (${J('茶道','sadō')}), codified by Sen no Rikyū in the 1500s: step over the tatami borders, eat the sweet first, take the bowl with your right hand onto your left palm, turn it twice clockwise so you drink from its side, finish in a few sips, then admire the bowl.</p>
+<h4>Fushimi sake</h4>
+<p>Fushimi was once written 伏水, "hidden water," for its soft groundwater, which gives a gentle style called ${J('女酒','onna-zake')}, "feminine sake," the counterpoint to Kobe's dry Nada ${J('男酒','otoko-zake')}. Gekkeikan, founded 1637, runs the Okura Sake Museum.</p>`},
+
+{ id:'kyoto-people', short:'Fitting in', grp:'kyoto', icon:'💬', title:'Kyoto: indirectness & fitting in', html:`
+<p>Kyoto has a reputation, among other Japanese as much as foreigners, for polite speech with a second meaning. The famous example is ${J('ぶぶ漬け','bubuzuke')}: if a host offers "Bubuzuke demo dō dosu?" ("How about some tea over rice?"), the story goes that it means "time you went home." Kyoto people call that mostly a comic legend (it's the plot of a classic rakugo story), but the style underneath is real: requests are softened, and a no comes as vague praise or delay. Critics call it ${J('いけず','ikezu')}, sly unkindness; locals prefer ${J('はんなり','hannari')}, graceful elegance.</p>
+<h4>Kyoto speech</h4>
+<p>${J('京言葉','kyō-kotoba')} is soft and slow. Listen for:</p>
+<ul>
+<li>${J('〜はる','-haru')}, a gentle honorific: ${J('どこ行かはるの？','doko ikaharu no?')}, "where are you off to?"</li>
+<li>${J('どす','dosu')}, an old "is," mostly heard from older people and maiko.</li>
+<li>${J('おこしやす','okoshiyasu')} and ${J('おいでやす','oideyasu')}: "welcome."</li>
+<li>${J('おおきに','ōkini')}: "thank you," most at home here.</li>
+</ul>
+<h4>How to fit in</h4>
+<ul>
+<li>Keep your voice low. Complaints about tourists usually start with volume.</li>
+<li>If staff hesitate, that's a no.</li>
+<li>Keep narrow lanes clear; people live there.</li>
+<li>Stand still to eat and drink.</li>
+<li>Skip tipping and say ${J('ごちそうさまでした','gochisōsama deshita')}.</li>
+</ul>
+<h4>Phrases for Kyoto</h4>
+${PB([
+  ['おおきに','ōkini','Thank you (Kansai)'],
+  ['お邪魔します','o-jama shimasu','"Excuse my intrusion," entering a home, tea room or small shop'],
+  ['撮影禁止','satsuei kinshi','No photography (read it on signs)'],
+  ['私道','shidō','Private road (read it on signs)'],
+  ['抹茶をお願いします','matcha o onegai shimasu','Matcha, please'],
+  ['予約していた〜です','yoyaku shite ita … desu','I have a reservation under …'],
+  ['上ル / 下ル','agaru / sagaru','North / south (Kyoto directions)'],
+  ['きれいどすなぁ','kirei dosu nā','"How beautiful," old Kyoto style (a gentle joke)'],
+  ['あかん、しゃあない','akan, shā nai','"No good, can\'t be helped" (the Kansai shrug)']
+])}
+${TALK([
+  '"Is it true \'the last war\' means the Ōnin War?"',
+  '"Fushimi sake or Nada sake?"',
+  '"Which season do locals think is most beautiful here?"',
+  '"What are your favourite kyō-yasai?"',
+  '"Can you sing Maru Take Ebisu?"'
+], 'ask how the tourist boom has changed daily life, then listen. Treat geiko as the artists they are; the Western habit of confusing geisha with sex work is a long-standing sore point. Raise the bubuzuke stereotype as a question about a story you heard, never as a verdict.')}`},
+
+/* ======================= FURTHER ======================= */
+{ id:'trips', short:'Day trips', grp:'further', icon:'🥾', title:'Day trips & overnights', html:`
+<p>Outdoors first, chosen for a real sense of place. Check trail status on the day. Rokko and Arima are under Kobe; Asuka and Yagyū under Nara.</p>
+${PL({name:'Minoo Park & Katsuo-ji', ja:'箕面公園・勝尾寺', ro:'Minō kōen / Katsuō-ji', why:'A forested gorge 30 min from Umeda. A 2.7 km trail (about 40 min) leads to the 33 m Minoo Falls. For a real hike, take the Tōkai Nature Trail up to Katsuo-ji, a temple covered in thousands of daruma dolls (¥500). Don\'t feed the monkeys; it\'s banned.', status:'Fully reopened 7 Aug 2026 after a shop fire, with one narrow section.', how:'Hankyu from Osaka-umeda to Ishibashi handai-mae, change to the Minoo Line. 25–30 min.', phrase:['滝まで何分かかりますか？','taki made nanpun kakarimasu ka?','How long to the falls?']})}
 ${PL({name:'Kishiwada', ja:'岸和田', ro:'Kishiwada', why:'Castle town, fishing port and danjiri heartland. Come on 10–11 October for the festival, or any day for the museum and old streets.', how:'Nankai from Namba, about 25 min. For the October festival, JR Hanwa Line to Higashi-Kishiwada, Shimomatsu or Kumeda.', phrase:['だんじりはどこを通りますか？','danjiri wa doko o tōrimasu ka?','Where do the floats pass?']})}
 ${PL({name:'Akashi', ja:'明石', ro:'Akashi', why:'Octopus capital, the Uonotana market and Inland Sea views. Also the town on Japan\'s time meridian (135°E). Pair with Himeji\'s festival on 14–15 October.', how:'JR Special Rapid, about 40 min.', phrase:['明石焼きひとつください','akashiyaki hitotsu kudasai','One akashiyaki, please']})}
-${PL({name:'Asuka & Yagyū', ja:'明日香・柳生', ro:'Asuka / Yagyū', why:'Asuka is the rural valley of Japan\'s first capitals: rice terraces, strange stone monuments and burial mounds, best by bike. Early October means golden rice. Yagyū is the mountain home of a famous sword school, reached by an old forest road.', how:'Asuka: Kintetsu from Osaka-Abenobashi, 45–50 min. Yagyū: bus from Kintetsu Nara, or hike the Yagyū Kaidō (about 15 km).', phrase:['自転車を借りたいです','jitensha o karitai desu','I\'d like to rent a bike']})}
 ${PL({name:'Yoshino & Kawakami', ja:'吉野・川上村', ro:'Yoshino / Kawakami-mura', why:'Sacred mountains and part of a World Heritage site. Famous for spring cherries, so autumn is quiet. Kinpusen-ji\'s huge wooden hall is the centre of mountain asceticism. Upstream, Kawakami is the birthplace of Yoshino forestry; its roadside station has salt-cured persimmon-leaf sushi, an onsen and cedar crafts.', how:'Kintetsu from Osaka-Abenobashi, about 1 hr 20 min. Kawakami by bus or taxi from Yamato-Kamiichi.', phrase:['この木は何年ものですか？','kono ki wa nannen-mono desu ka?','How old is this tree?']})}
 ${PL({name:'Kōyasan temple stay (overnight)', ja:'高野山', ro:'Kōya-san', why:'A mountaintop monastery town founded by the monk Kūkai in 816. Sleep in a temple lodging (宿坊 <i>shukubō</i>), eat vegetarian shōjin ryōri, join the dawn service, and walk the 2 km Okunoin cemetery under giant cedars. One of the most moving places in Japan.', status:'Nankai Kōya Line running normally (24 Sep). The station-to-town bus takes a longer route via the Daimon Gate, so allow extra time.', how:'Nankai from Namba to Gokurakubashi, cable car, then bus. About 2 hrs. The Kōyasan World Heritage Ticket (from ¥3,980) covers it.', phrase:['朝のお勤めに参加できますか？','asa no otsutome ni sanka dekimasu ka?','Can I join the morning service?']})}
 ${PL({name:'Kumano Kodo, Nakahechi route (2–4 nights)', ja:'熊野古道 中辺路', ro:'Kumano Kodō Nakahechi', why:'A thousand-year-old pilgrimage through cedar forest to the three grand Kumano shrines. Walk inn to inn and soak in the tiny riverside Tsuboyu bath at Yunomine. Hongū\'s old site has Japan\'s largest torii, 33.9 m. For a taste, walk Hosshinmon-ōji to Hongū: 6.9 km, 3–4 hours. October is prime time: cool, no leeches.', status:'No Nakahechi closures listed (26 Sep). The coastal Ōhechi has a long closure and the Kohechi a landslide detour. The Kii Peninsula is very wet, so watch the typhoon.', how:'JR Kuroshio from Shin-Osaka to Kii-Tanabe (about 2 hr 15 min), bus to Takijiri-ōji (about 40 min). Or the Kōyasan–Kumano Access Bus: reservation needed, no Tuesdays or Wednesdays. Book inns and luggage transfer through Kumano Travel.', phrase:['熊野詣です','Kumano mōde desu','I\'m on the Kumano pilgrimage']})}
 ${PL({name:'Tamba-Sasayama', ja:'丹波篠山', ro:'Tanba-Sasayama', why:'A farming castle town in the hills, and October is its moment. Black edamame are sold still on the branch from roadside stalls for about two weeks. Tabuchi Farm, 300+ years old, runs harvest days. Also chestnuts, Tamba-yaki pottery from one of Japan\'s six ancient kilns, and samurai streets.', how:'JR Fukuchiyama Line to Sasayamaguchi (about 1 hr), then bus (15 min).', phrase:['黒枝豆、一束ください','kuro-edamame, hitotaba kudasai','One bundle of black edamame, please']})}
 ${PL({name:'Kinosaki Onsen (overnight)', ja:'城崎温泉', ro:'Kinosaki onsen', why:'A 1,300-year-old spa town on a willow-lined canal. You stroll between seven public baths in yukata and wooden sandals; inn guests get a free pass. All seven welcome tattoos, which is rare. Many shops and baths are cash only.', how:'JR Kōnotori, about 2 hr 40 min.', phrase:['浴衣の着方を教えてください','yukata no kikata o oshiete kudasai','Show me how to wear the yukata']})}
-${PL({name:'Ine boathouses (overnight)', ja:'伊根の舟屋', ro:'Ine no funaya', why:'A working fishing village with about 230 two-storey wooden boathouses at the water\'s edge: boats below, living rooms above. Stay the night in a converted one.', how:'JR to Fukuchiyama, Kyoto Tango Railway to Amanohashidate, then bus to Ine. About 4 hrs. The Amanohashidate–Ine 2-day pass (¥3,500) covers buses and the bay boat.', phrase:['舟屋に泊まってみたいです','funaya ni tomatte mitai desu','I\'d love to stay in a boathouse']})}`},
-
-{ id:'plan', icon:'🗓️', title:'A two-week shape', html:`
-<ol>
-<li><b>Days 1–3:</b> Osaka neighbourhoods (Tenjinbashisuji, Tenma, Nakanoshima, Shitennō-ji, Sumiyoshi) and a sentō night. Let the typhoon pass.</li>
-<li><b>Day 4:</b> Minoo and Katsuo-ji.</li>
-<li><b>Days 5–6:</b> Kōyasan temple stay.</li>
-<li><b>Days 7–9:</b> Kumano Kodo Nakahechi, on the access bus from Kōyasan if it runs that day.</li>
-<li><b>Day 10 (Sat 10 Oct):</b> Tamba-Sasayama for black edamame, or Kishiwada.</li>
-<li><b>Day 11 (Sun 11 Oct):</b> Kishiwada danjiri main day.</li>
-<li><b>Day 12 (Mon 12 Oct):</b> Takenaka museum, then Rokko to Arima. The museum opens on the holiday.</li>
-<li><b>Days 13–14:</b> Akashi and Himeji's Nada festival (14–15 Oct), or Kinosaki or Ine for one last night.</li>
-</ol>
-<div class="why">Weather beats plans. Swap the mountain days around whatever the forecast says, and keep one city day spare.</div>`}
+${PL({name:'Ine boathouses (overnight)', ja:'伊根の舟屋', ro:'Ine no funaya', why:'A working fishing village with about 230 two-storey wooden boathouses at the water\'s edge: boats below, living rooms above. Stay the night in a converted one.', how:'JR to Fukuchiyama, Kyoto Tango Railway to Amanohashidate, then bus to Ine. About 4 hrs. The Amanohashidate–Ine 2-day pass (¥3,500) covers buses and the bay boat.', phrase:['舟屋に泊まってみたいです','funaya ni tomatte mitai desu','I\'d love to stay in a boathouse']})}`}
 ];
 
 /* ---------------- Phrasebook ---------------- */
@@ -667,7 +1082,10 @@ const catBlurbs = {
   'Kansai-ben': 'Osaka dialect. Use it for warmth with vendors, bar staff and new friends. Switch to standard polite Japanese with monks, front desks and older strangers in formal settings.',
   'Connecting': 'The phrases that turn a transaction into a conversation.',
   'Onsen & Sentō': 'Wash before you soak, towel stays out of the water, and ask about tattoos.',
-  'Hiking': 'Rural buses stop early and bears are about. Ask before you set off.'
+  'Hiking': 'Rural buses stop early and bears are about. Ask before you set off.',
+  'Kobe': 'Beef, sake and directions. More in Guide → Kobe.',
+  'Nara': 'Deer, temples and food. More in Guide → Nara.',
+  'Kyoto': 'Soft speech, signs to read, tea. More in Guide → Kyoto.'
 };
 let pid = 0;
 const P = (cat, en, ja, ro, say, note) => ({ id: ++pid, cat, en, ja, ro, say: say || '', note: note || '' });
@@ -776,7 +1194,31 @@ const phrases = [
   P('Emergency','Please call an ambulance','救急車を呼んでください','kyūkyūsha o yonde kudasai','kyoo-kyoo-shah oh yohn-deh koo-dah-sigh','Dial 119 for ambulance or fire, 110 for police.'),
   P('Emergency','Where is the hospital?','病院はどこですか？','byōin wa doko desu ka?','byoh-een wah doh-koh dess kah'),
   P('Emergency','I feel unwell','気分が悪いです','kibun ga warui desu','kee-boon gah wah-roo-ee dess'),
-  P('Emergency','I lost my passport','パスポートをなくしました','pasupōto o nakushimashita','pah-soo-poh-toh oh nah-koo-shee-mash-tah')
+  P('Emergency','I lost my passport','パスポートをなくしました','pasupōto o nakushimashita','pah-soo-poh-toh oh nah-koo-shee-mash-tah'),
+
+  P('Kobe','Do you have the Kobe beef certificate?','神戸ビーフの証明書はありますか？','Kōbe bīfu no shōmeisho wa arimasu ka?','koh-beh bee-foo noh shoh-may-sho wah ah-ree-mass kah','"Wagyu" signs can mean other beef. Certified places can show a 10-digit ID.'),
+  P('Kobe','Sirloin / tenderloin, please','サーロイン / ヒレでお願いします','sāroin / hire de onegai shimasu','sah-roh-een / hee-reh deh oh-neh-guy shee-mass','For teppanyaki.'),
+  P('Kobe','A dry sake, please','辛口のお酒をください','karakuchi no osake o kudasai','kah-rah-koo-chee noh oh-sah-keh oh koo-dah-sigh','Nada sake is dry by tradition.'),
+  P('Kobe','Which way is the mountain side?','山側はどっちですか？','yama-gawa wa dotchi desu ka?','yah-mah-gah-wah wah dot-chee dess kah','Kobe directions: mountain side is north, sea side (umi-gawa) south.'),
+  P('Kobe','What\'re you up to?','何しとん？','nani shiton?','nah-nee shee-tohn','Kobe-ben, casual. Friends only.'),
+  P('Kobe','Two pork buns, please','豚まん二つください','butaman futatsu kudasai','boo-tah-mahn foo-tah-tsoo koo-dah-sigh','Nankinmachi.'),
+  P('Kobe','Which bakery do you like?','好きなパン屋さんはどこですか？','suki na pan-ya-san wa doko desu ka?','skee nah pahn-yah-sahn wah doh-koh dess kah','Every Kobe local has an answer.'),
+
+  P('Nara','Deer crackers, please','鹿せんべいをください','shika senbei o kudasai','shee-kah sen-bay oh koo-dah-sigh','About ¥200 a bundle.'),
+  P('Nara','I don\'t have any more','もうないよ','mō nai yo','moh nigh yoh','To a deer, with both palms open.'),
+  P('Nara','May I request a goshuin?','御朱印をお願いできますか？','goshuin o onegai dekimasu ka?','go-shoo-een oh oh-neh-guy deh-kee-mass kah','Pray first, then ask.'),
+  P('Nara','How do I get to Tōdai-ji?','東大寺はどう行けばいいですか？','Tōdai-ji wa dō ikeba ii desu ka?','toh-dye-jee wah doh ee-keh-bah ee dess kah'),
+  P('Nara','It was delicious','おいしかったです','oishikatta desu','oy-shee-kaht-tah dess','Nara people joke there\'s nothing tasty here. Prove them wrong.'),
+  P('Nara','Do you have bodaimoto sake?','菩提酛のお酒はありますか？','bodaimoto no osake wa arimasu ka?','boh-dye-moh-toh noh oh-sah-keh wah ah-ree-mass kah','The old temple method, revived by local brewers.'),
+
+  P('Kyoto','Thank you (Kyoto\'s favourite)','おおきに','ōkini','oh-kee-nee'),
+  P('Kyoto','Excuse my intrusion','お邪魔します','o-jama shimasu','oh-jah-mah shee-mass','Entering a home, tea room or tiny shop.'),
+  P('Kyoto','No photography','撮影禁止','satsuei kinshi','sah-tsoo-ay keen-shee','Read it on signs.'),
+  P('Kyoto','Private road','私道','shidō','shee-doh','Read it on signs in Gion. Fines up to ¥10,000.'),
+  P('Kyoto','Matcha, please','抹茶をお願いします','matcha o onegai shimasu','mah-chah oh oh-neh-guy shee-mass'),
+  P('Kyoto','I have a reservation','予約しています','yoyaku shite imasu','yoh-yah-koo shteh ee-mass','Add your name before it.'),
+  P('Kyoto','How beautiful (old Kyoto style)','きれいどすなぁ','kirei dosu nā','kee-ray doh-soo nah','A gentle joke. Say it with a smile.'),
+  P('Kyoto','Can\'t be helped','しゃあない','shā nai','shah nigh','The Kansai shrug.')
 ];
 const phraseCats = ['All','Starred', ...new Set(phrases.map(p => p.cat))];
 
@@ -879,9 +1321,14 @@ function switchTab(tab) {
 }
 
 /* ---------------- Guide ---------------- */
+let gGroup = store.get('gGroup', 'basics');
+if (!groups.some(g => g.id === gGroup)) gGroup = 'basics';
 function renderGuide() {
-  $('guideToc').innerHTML = guide.map(s => `<button data-action="toc" data-val="${s.id}" class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-zinc-200 bg-white text-zinc-700">${s.icon} ${s.title.split(':')[0]}</button>`).join('');
-  $('guideBody').innerHTML = guide.map((s, i) => `
+  const g = groups.find(x => x.id === gGroup), secs = guide.filter(s => s.grp === gGroup);
+  $('guidePlaces').innerHTML = groups.map(x => `<button data-action="city" data-val="${x.id}" class="place-tab${x.id === gGroup ? ' on' : ''}"><span>${x.icon}</span>${x.name}</button>`).join('');
+  $('guideBlurb').innerHTML = `${g.ja ? `<b class="jp">${g.ja}</b> · ` : ''}${g.blurb}`;
+  $('guideToc').innerHTML = secs.map(s => `<button data-action="toc" data-val="${s.id}" class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-zinc-200 bg-white text-zinc-700">${s.icon} ${s.short || s.title}</button>`).join('');
+  $('guideBody').innerHTML = secs.map((s, i) => `
     <details id="g-${s.id}" class="anchor bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden" ${i === 0 ? 'open' : ''}>
       <summary class="px-4 py-3.5 flex items-center justify-between gap-3">
         <span class="font-bold text-[15px] text-zinc-900">${s.icon}&nbsp; ${s.title}</span>
@@ -889,6 +1336,9 @@ function renderGuide() {
       </summary>
       <div class="g px-4 pb-4 border-t border-zinc-100">${s.html}</div>
     </details>`).join('');
+}
+function setGroup(id) {
+  gGroup = id; store.set('gGroup', id); renderGuide();
 }
 
 /* ---------------- Phrases ---------------- */
@@ -1031,7 +1481,12 @@ document.addEventListener('click', e => {
       store.set('rate', rate); $('speedLabel').textContent = rate + '×';
       toast(rate === 0.65 ? 'Slow voice' : rate === 1 ? 'Natural speed' : 'Learner speed'); break;
     }
-    case 'toc': { const d = $('g-' + val); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); break; }
+    case 'toc': {
+      const sec = guide.find(x => x.id === val);
+      if (sec && sec.grp !== gGroup) setGroup(sec.grp);
+      const d = $('g-' + val); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+    }
+    case 'city': setGroup(val); $('view-guide').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'pcat': phraseCat = val; renderPhraseCats(); renderPhrases(); break;
     case 'star': toggleStar(+val); break;
     case 'pshow': { const p = phrases.find(x => x.id === +val); openShow(p.ja, p.ro, p.en); break; }
