@@ -8,7 +8,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Kotoba">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%23e11d48%27/%3E%3Ctext x=%2732%27 y=%2745%27 font-size=%2738%27 text-anchor=%27middle%27 fill=%27white%27%3E%E8%A8%80%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Kotoba · Kansai Field Guide</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -222,7 +224,11 @@ summary{display:list-item}
 .focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}
 .focus\:ring-2:focus{box-shadow:0 0 0 2px var(--tw-ring-color,#e11d48)}
 .focus\:ring-vermilion:focus{--tw-ring-color:#e11d48}
-@media (min-width:640px){.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}}</style>
+@media (min-width:640px){.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}}
+.items-baseline{align-items:baseline}
+.p-2\.5{padding:0.625rem}
+.pb-0\.5{padding-bottom:0.125rem}
+.pt-3{padding-top:0.75rem}</style>
 
 <style>
   html { -webkit-text-size-adjust: 100%; }
@@ -314,7 +320,7 @@ summary{display:list-item}
   <section id="view-guide" class="view active">
     <div class="mb-4">
       <h2 class="text-xl font-bold">Your two weeks in Kansai</h2>
-      <p class="text-sm text-zinc-500 mt-1">Pick where you are today. Tap any <span class="say">red Japanese</span> to hear it. Sections open and close, so read a bit on each train ride. <span class="say"><a href = "jpphrasebook.html">Phrasebook here.</a></span></p>
+      <p class="text-sm text-zinc-500 mt-1">Pick where you are today. Tap any <span class="say">red Japanese</span> to hear it. Sections open and close, so read a bit on each train ride. <button class="go" data-action="tab" data-tab="phrases">Open the phrasebook</button></p>
     </div>
     <div id="guidePlaces" class="places"></div>
     <p id="guideBlurb" class="text-sm text-zinc-600 mb-3"></p>
@@ -1083,144 +1089,100 @@ const catBlurbs = {
   'Connecting': 'The phrases that turn a transaction into a conversation.',
   'Onsen & Sentō': 'Wash before you soak, towel stays out of the water, and ask about tattoos.',
   'Hiking': 'Rural buses stop early and bears are about. Ask before you set off.',
+  'My phrases': 'Your own situations and phrases. Saved on this phone only; tap ▶ to hear them.',
   'Kobe': 'Beef, sake and directions. More in Guide → Kobe.',
   'Nara': 'Deer, temples and food. More in Guide → Nara.',
   'Kyoto': 'Soft speech, signs to read, tea. More in Guide → Kyoto.'
 };
-let pid = 0;
-const P = (cat, en, ja, ro, say, note) => ({ id: ++pid, cat, en, ja, ro, say: say || '', note: note || '' });
-const phrases = [
-  P('Essentials','Hello','こんにちは','konnichiwa','kon-nee-chee-wah','Also the greeting on hiking trails.'),
-  P('Essentials','Good morning (polite)','おはようございます','ohayō gozaimasu','oh-hah-yoh go-zai-mass','Until about 10am.'),
-  P('Essentials','Good evening','こんばんは','konbanwa','kon-bahn-wah'),
-  P('Essentials','Thank you','ありがとうございます','arigatō gozaimasu','ah-ree-gah-toh go-zai-mass'),
-  P('Essentials','Thank you (for what you did)','ありがとうございました','arigatō gozaimashita','ah-ree-gah-toh go-zai-mash-tah','Past tense. Use it leaving a shop or after a favour.'),
-  P('Essentials','Excuse me / sorry / thanks for the trouble','すみません','sumimasen','soo-mee-mah-sen','Your most useful word. Calls staff, squeezes past, apologises.'),
-  P('Essentials','Please, go ahead','どうぞ','dōzo','doh-zoh','Offering a seat or letting someone go first.'),
-  P('Essentials','Please (asking)','お願いします','onegai shimasu','oh-neh-guy shee-mass','Point at something and say this.'),
-  P('Essentials','I\'m fine / no thanks','大丈夫です','daijōbu desu','dai-joh-boo dess','The polite way to turn down a bag, help or an offer.'),
-  P('Essentials','Yes / No','はい / いいえ','hai / iie','high / ee-eh','"Hai" often means "I\'m listening," not "I agree."'),
-  P('Essentials','I don\'t understand Japanese','日本語がわかりません','nihongo ga wakarimasen','nee-hon-go gah wah-kah-ree-mah-sen'),
-  P('Essentials','I speak a little Japanese','日本語、少しだけ話せます','nihongo, sukoshi dake hanasemasu','nee-hon-go, skoh-shee dah-keh hah-nah-seh-mass','Lowers the pressure for both of you.'),
-  P('Essentials','Once more, please','もう一度お願いします','mō ichido onegai shimasu','moh ee-chee-doh oh-neh-guy shee-mass'),
-  P('Essentials','Slowly, please','ゆっくりお願いします','yukkuri onegai shimasu','yook-koo-ree oh-neh-guy shee-mass'),
-  P('Essentials','It\'s beautiful','きれいですね','kirei desu ne','kee-ray dess neh'),
+/* All phrases live in phrases.json, the one phrase list for the app. */
+let phrases = [], phrasesFailed = false;
+let phraseCats = ['All', 'Starred', 'My phrases'];
+const loadPhrases = () => fetch('phrases.json')
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(list => {
+    phrases = list.map(p => ({ id: p.id, cat: p.category, en: p.english, ja: p.japanese, ro: p.romaji, say: p.say || '', note: p.tip || '', ctx: p.context || '', group: p.group || '' }));
+    phraseCats = ['All', 'Starred', 'My phrases', ...new Set(phrases.map(p => p.cat))];
+  })
+  .catch(() => { phrasesFailed = true; });
 
-  P('Connecting','Nice to meet you','はじめまして','hajimemashite','hah-jee-meh-mash-teh'),
-  P('Connecting','Pleased to know you (after introductions)','よろしくお願いします','yoroshiku onegai shimasu','yoh-roh-shkoo oh-neh-guy shee-mass'),
-  P('Connecting','It\'s my first time in Japan','日本は初めてです','Nihon wa hajimete desu','nee-hon wah hah-jee-meh-teh dess','Locals love hearing it. Expect recommendations.'),
-  P('Connecting','I\'m from Australia','オーストラリアから来ました','Ōsutoraria kara kimashita','oh-soo-toh-rah-ree-ah kah-rah kee-mash-tah','Other countries are in the Builder tab.'),
-  P('Connecting','Is this spot OK?','ここ、いいですか？','koko, ii desu ka?','koh-koh ee dess kah','At a standing bar or shared table.'),
-  P('Connecting','The same as that, please','同じものをください','onaji mono o kudasai','oh-nah-jee moh-noh oh koo-dah-sigh','Point at your neighbour\'s drink. Instant conversation.'),
-  P('Connecting','Where do locals go?','地元の人はどこに行きますか？','jimoto no hito wa doko ni ikimasu ka?','jee-moh-toh noh hee-toh wah doh-koh nee ee-kee-mass kah','Best question for bar staff and innkeepers.'),
-  P('Connecting','What\'s the local speciality?','名物は何ですか？','meibutsu wa nan desu ka?','may-boo-tsoo wah nahn dess kah'),
-  P('Connecting','How long has this shop been going?','創業何年ですか？','sōgyō nannen desu ka?','soh-gyoh nahn-nen dess kah','Owners of old shops are proud of the answer.'),
-  P('Connecting','I love Osaka','大阪、めっちゃ好きです','Ōsaka, meccha suki desu','oh-sah-kah, metch-ah skee dess','Half Kansai-ben. Guaranteed grin.'),
-  P('Connecting','Amazing skill','すごい技ですね','sugoi waza desu ne','soo-goy wah-zah dess neh','For craftspeople, chefs, anyone making something.'),
-  P('Connecting','May I take your photo?','写真を撮ってもいいですか？','shashin o tottemo ii desu ka?','shah-sheen oh tot-teh-moh ee dess kah','Always ask before photographing people.'),
-  P('Connecting','Cheers!','乾杯！','kanpai!','kahn-pie'),
-  P('Connecting','Take care!','お元気で','ogenki de','oh-gen-kee deh','A warm goodbye to someone you won\'t see again. You\'ll hear it a lot on the Kumano Kodo.'),
+// Headings for phrase groups (a category's venue types). A group missing here still shows, without icon or subtitle.
+const groupMeta = {
+  'Izakaya & Counter Bars': { icon: '🍶', sub: 'Best for making friends' },
+  'Casual Restaurants & Ramen Shops': { icon: '🍜' },
+  "What's on the Menu": { icon: '🍱', sub: 'What it is, and how it\'s made' },
+  'Cafés & Convenience Stores (Konbini)': { icon: '🏪' },
+  'Getting the Bill (Everywhere)': { icon: '🧾', sub: 'Works at almost any place' },
+  'Anywhere You Eat': { icon: '🥢', sub: 'Order, react, pay' },
+  'In a Store (Asking Staff)': { icon: '🏬', sub: 'Swap in any item name' },
+  'On the Street (Asking Where to Buy)': { icon: '🚶', sub: 'Before you\'ve found the store' },
+  'Trying Things On (Clothes)': { icon: '👕' },
+  'Paying & Money': { icon: '💴' },
+  'Markets & Craft Shops': { icon: '🧺' }
+};
 
-  P('Kansai-ben','Thanks (the merchant\'s thank-you)','おおきに','ōkini','oh-kee-nee','Charming with shopkeepers and older vendors. Try "ōkini, oishikatta!" as you pay.'),
-  P('Kansai-ben','Very / super','めっちゃ','meccha','metch-ah','"Meccha oishii!" = super tasty.'),
-  P('Kansai-ben','Really?','ほんま？','honma?','hohn-mah','"Honma ni ōkini" = thanks so much.'),
-  P('Kansai-ben','No good / hopeless','あかん','akan','ah-kahn','Fine for jokes about yourself. Don\'t use it to turn down a host.'),
-  P('Kansai-ben','How much?','なんぼ？','nanbo?','nahn-boh','"Kore nanbo?" at a market stall. Too cheeky for a department store.'),
-  P('Kansai-ben','Hi / thanks (to regulars)','まいど','maido','my-doh','You\'ll hear it from shop staff. Say it back once you\'re a regular.'),
-  P('Kansai-ben','Nice vibe','ええ感じ！','ee kanji!','eh-eh kahn-jee','"Ee" is Kansai for good.'),
-  P('Kansai-ben','I don\'t get it','わからへん','wakarahen','wah-kah-rah-hen','Kansai version of wakarimasen.'),
-  P('Kansai-ben','Why on earth?!','なんでやねん','nande ya nen','nahn-deh yah nen','The comedy retort. Only with friends who are already joking. From a visitor, it brings the house down.'),
-  P('Kansai-ben','Exhausted','しんどい','shindoi','sheen-doy','Perfect after a Rokko hike.'),
-  P('Kansai-ben','Making money?','儲かりまっか？','mōkarimakka?','moh-kah-ree-mahk-kah','The old merchant greeting. Mostly a joke now.'),
-  P('Kansai-ben','So-so','ぼちぼちでんな','bochi-bochi denna','boh-chee boh-chee den-nah','The traditional reply. "Bochi-bochi" alone works when asked how you are.'),
+// Before phrases.json, stars and "got it" marks used numbers 1–116. This maps them to the new ids once.
+const LEGACY_IDS = { 1:'greetings-03', 2:'greetings-01', 3:'greetings-04', 4:'greetings-07', 5:'essentials-01', 6:'essentials-02', 7:'essentials-03', 8:'essentials-04', 9:'essentials-05', 10:'essentials-06', 11:'essentials-07', 12:'essentials-08', 13:'essentials-09', 14:'essentials-10', 15:'essentials-11', 16:'greetings-05', 17:'greetings-06', 18:'connecting-01', 19:'connecting-02', 20:'connecting-03', 21:'connecting-04', 22:'connecting-05', 23:'connecting-06', 24:'connecting-07', 25:'connecting-08', 26:'connecting-09', 27:'connecting-10', 28:'connecting-11', 29:'connecting-12', 30:'kansai-ben-01', 31:'kansai-ben-02', 32:'kansai-ben-03', 33:'kansai-ben-04', 34:'kansai-ben-05', 35:'kansai-ben-06', 36:'kansai-ben-07', 37:'kansai-ben-08', 38:'kansai-ben-09', 39:'kansai-ben-10', 40:'kansai-ben-11', 41:'kansai-ben-12', 42:'dining-51', 43:'dining-52', 44:'dining-53', 45:'dining-10', 46:'dining-54', 47:'dining-55', 48:'dining-02', 49:'dining-56', 50:'dining-57', 51:'dining-09', 52:'dining-59', 53:'dining-60', 54:'dining-61', 55:'dining-06', 56:'temples-01', 57:'temples-02', 58:'temples-03', 59:'temples-04', 60:'temples-05', 61:'temples-06', 62:'onsen-01', 63:'onsen-02', 64:'onsen-03', 65:'onsen-04', 66:'onsen-05', 67:'onsen-06', 68:'hiking-01', 69:'hiking-02', 70:'hiking-03', 71:'hiking-04', 72:'hiking-05', 73:'hiking-06', 74:'hiking-07', 75:'transport-12', 76:'transport-13', 77:'transport-14', 78:'transport-01', 79:'transport-15', 80:'transport-16', 81:'shopping-01', 82:'shopping-23', 83:'shopping-24', 84:'shopping-25', 85:'shopping-26', 86:'shopping-27', 87:'greetings-09', 88:'homes-01', 89:'homes-02', 90:'homes-03', 91:'emergency-01', 92:'emergency-09', 93:'emergency-02', 94:'emergency-10', 95:'emergency-04', 96:'kobe-01', 97:'kobe-02', 98:'kobe-03', 99:'kobe-04', 100:'kobe-05', 101:'kobe-06', 102:'kobe-07', 103:'nara-01', 104:'nara-02', 105:'nara-03', 106:'nara-04', 107:'nara-05', 108:'nara-06', 109:'kyoto-01', 110:'kyoto-02', 111:'kyoto-03', 112:'kyoto-04', 113:'kyoto-05', 114:'kyoto-06', 115:'kyoto-07', 116:'kyoto-08' };
+function migrateSaved() {
+  const up = v => typeof v === 'number' ? LEGACY_IDS[v] : v;
+  starred = new Set([...starred].map(up).filter(Boolean));
+  known = new Set([...known].map(up).filter(Boolean));
+  // Favourites from the retired jpphrasebook.html (same site, so same storage): phrases become stars,
+  // anything else (Builder words) goes into My phrases so nothing is lost.
+  if (!store.get('pbImported', false)) {
+    const ids = new Set(phrases.map(p => p.id)), extra = [];
+    store.get('nihongo_pal_favourites', []).forEach((f, i) => {
+      if (ids.has(f.id)) starred.add(f.id);
+      else if (f.japanese) extra.push({ id: Date.now() + i, en: f.english || '', ja: f.japanese, ro: f.romaji || '' });
+    });
+    if (extra.length) { mine.unshift({ id: Date.now() - 1, name: 'Saved from the old Phrasebook', phrases: extra }); saveMine(); }
+    store.set('pbImported', true);
+  }
+  store.set('starred', [...starred]); store.set('known', [...known]);
+}
 
-  P('Dining','Two people','二人です','futari desu','foo-tah-ree dess','Hold up two fingers too.'),
-  P('Dining','One person','一人です','hitori desu','hee-toh-ree dess','Ask for the counter. Best seat for a solo traveller.'),
-  P('Dining','Before eating','いただきます','itadakimasu','ee-tah-dah-kee-mass'),
-  P('Dining','After eating','ごちそうさまでした','gochisōsama deshita','go-chee-soh-sah-mah desh-tah','Say it to the staff as you leave. It does the job of a tip.'),
-  P('Dining','Delicious','美味しい！','oishii!','oy-shee','Works anywhere.'),
-  P('Dining','Tasty! (casual)','うまい！','umai!','oo-my','Punchy and a bit blokey. Great at a counter; oishii is safer somewhere smart.'),
-  P('Dining','What do you recommend?','おすすめは何ですか？','osusume wa nan desu ka?','oh-soo-soo-meh wah nahn dess kah','Chefs love this question.'),
-  P('Dining','This one, please','これをください','kore o kudasai','koh-reh oh koo-dah-sigh'),
-  P('Dining','A draft beer, please','生ビールをください','nama biiru o kudasai','nah-mah bee-roo oh koo-dah-sigh'),
-  P('Dining','Water, please','お水をください','omizu o kudasai','oh-mee-zoo oh koo-dah-sigh','Water is free.'),
-  P('Dining','The bill, please','お会計お願いします','o-kaikei onegai shimasu','oh-kai-kay oh-neh-guy shee-mass','Or cross your index fingers. Pay at the front.'),
-  P('Dining','Is there fish in the dashi?','出汁に魚は入っていますか？','dashi ni sakana wa haitte imasu ka?','dah-shee nee sah-kah-nah wah hite-teh ee-mass kah','Fish stock is in almost everything.'),
-  P('Dining','I have an allergy','アレルギーがあります','arerugī ga arimasu','ah-reh-roo-gee gah ah-ree-mass','Then use the Builder: "I cannot eat…"'),
-  P('Dining','Do you have an English menu?','英語のメニューはありますか？','eigo no menyū wa arimasu ka?','ay-go noh meh-nyoo wah ah-ree-mass kah'),
-
-  P('Temples & Shrines','A seal (goshuin), please','御朱印をお願いします','goshuin o onegai shimasu','go-shoo-een oh oh-neh-guy shee-mass','Devotional, ¥300–500. Use a proper book.'),
-  P('Temples & Shrines','May I go inside?','中に入ってもいいですか？','naka ni haitte mo ii desu ka?','nah-kah nee hite-teh moh ee dess kah'),
-  P('Temples & Shrines','Should I take off my shoes?','靴を脱ぎますか？','kutsu o nugimasu ka?','koo-tsoo oh noo-gee-mass kah'),
-  P('Temples & Shrines','May I take photos here?','ここで写真を撮ってもいいですか？','koko de shashin o tottemo ii desu ka?','koh-koh deh shah-sheen oh tot-teh-moh ee dess kah'),
-  P('Temples & Shrines','Can I join the morning service?','朝のお勤めに参加できますか？','asa no otsutome ni sanka dekimasu ka?','ah-sah noh oh-tsoo-toh-meh nee sahn-kah deh-kee-mass kah','For your Kōyasan temple stay.'),
-  P('Temples & Shrines','The temple food was delicious','精進料理、とても美味しかったです','shōjin ryōri, totemo oishikatta desu','shoh-jeen ryoh-ree, toh-teh-moh oy-shee-kaht-tah dess'),
-
-  P('Onsen & Sentō','Are tattoos OK?','タトゥーは大丈夫ですか？','tatū wa daijōbu desu ka?','tah-too wah dai-joh-boo dess kah'),
-  P('Onsen & Sentō','Is there a private bath?','貸切風呂はありますか？','kashikiri-buro wa arimasu ka?','kah-shee-kee-ree boo-roh wah ah-ree-mass kah'),
-  P('Onsen & Sentō','Can I rent a towel?','タオルを借りられますか？','taoru o kariraremasu ka?','tah-oh-roo oh kah-ree-rah-reh-mass kah'),
-  P('Onsen & Sentō','The water\'s hot, isn\'t it','お湯、熱いですね','o-yu, atsui desu ne','oh-yoo, ah-tsoo-ee dess neh','Easy small talk with the grandpa next to you.'),
-  P('Onsen & Sentō','That feels great','気持ちいい','kimochi ii','kee-moh-chee ee'),
-  P('Onsen & Sentō','Please show me how to wear the yukata','浴衣の着方を教えてください','yukata no kikata o oshiete kudasai','yoo-kah-tah noh kee-kah-tah oh oh-shee-eh-teh koo-dah-sigh','Left side over right. Always.'),
-
-  P('Hiking','Is this path open?','この道は通れますか？','kono michi wa tōremasu ka?','koh-noh mee-chee wah toh-reh-mass kah'),
-  P('Hiking','How many minutes to the top?','頂上まで何分ですか？','chōjō made nanpun desu ka?','choh-joh mah-deh nahn-poon dess kah'),
-  P('Hiking','How long on foot?','歩いて何分ですか？','aruite nanpun desu ka?','ah-roo-ee-teh nahn-poon dess kah'),
-  P('Hiking','Are there bears?','熊は出ますか？','kuma wa demasu ka?','koo-mah wah deh-mass kah','Bears have been seen near Rokko. Carry a bell.'),
-  P('Hiking','What time is the last bus?','最終バスは何時ですか？','saishū basu wa nanji desu ka?','sai-shoo bah-soo wah nahn-jee dess kah','Rural buses stop early. Ask before you set off.'),
-  P('Hiking','I\'m lost','道に迷いました','michi ni mayoimashita','mee-chee nee mah-yoy-mash-tah'),
-  P('Hiking','I\'m on the Kumano pilgrimage','熊野詣です','Kumano mōde desu','koo-mah-noh moh-deh dess'),
-
-  P('Transport','One ticket to Kōyasan, please','高野山まで一枚お願いします','Kōyasan made ichimai onegai shimasu','koh-yah-sahn mah-deh ee-chee-my oh-neh-guy shee-mass','Swap in any place name.'),
-  P('Transport','Does this train stop at Umeda?','この電車は梅田に止まりますか？','kono densha wa Umeda ni tomarimasu ka?','koh-noh den-shah wah oo-meh-dah nee toh-mah-ree-mass kah','Rapid and express trains skip stations. The Builder has more places.'),
-  P('Transport','Where\'s the bus stop for Arima Onsen?','有馬温泉行きのバス停はどこですか？','Arima onsen iki no basutei wa doko desu ka?','ah-ree-mah on-sen ee-kee noh bah-soo-tay wah doh-koh dess kah'),
-  P('Transport','Where is the station?','駅はどこですか？','eki wa doko desu ka?','eh-kee wah doh-koh dess kah'),
-  P('Transport','I\'d like to go here (show map)','ここに行きたいです','koko ni ikitai desu','koh-koh nee ee-kee-tai dess'),
-  P('Transport','Where\'s the toilet?','お手洗いはどこですか？','otearai wa doko desu ka?','oh-teh-ah-rai wah doh-koh dess kah'),
-
-  P('Shopping & Crafts','How much is this?','これはいくらですか？','kore wa ikura desu ka?','koh-reh wah ee-koo-rah dess kah'),
-  P('Shopping & Crafts','Can I pay by card?','カードは使えますか？','kādo wa tsukaemasu ka?','kah-doh wah tsoo-kah-eh-mass kah','Temples, stalls and bathhouses are often cash only.'),
-  P('Shopping & Crafts','Is this handmade?','手作りですか？','tezukuri desu ka?','teh-zoo-koo-ree dess kah'),
-  P('Shopping & Crafts','No nails are used?','釘は使っていないんですか？','kugi wa tsukatte inain desu ka?','koo-gee wah tsoo-kaht-teh ee-nine dess kah','Joinery makers light up at this.'),
-  P('Shopping & Crafts','I\'ll take this','これにします','kore ni shimasu','koh-reh nee shee-mass'),
-  P('Shopping & Crafts','No bag, thanks','袋は大丈夫です','fukuro wa daijōbu desu','foo-koo-roh wah dai-joh-boo dess'),
-
-  P('Homes','Sorry to intrude (going in)','お邪魔します','o-jama shimasu','oh-jah-mah shee-mass'),
-  P('Homes','Thanks for having me (leaving)','お邪魔しました','o-jama shimashita','oh-jah-mah shee-mash-tah'),
-  P('Homes','A little something (handing a gift)','つまらないものですが','tsumaranai mono desu ga','tsoo-mah-rah-nai moh-noh dess gah','Formal and humble. "Kore, dōzo" works too.'),
-  P('Homes','Thank you for everything','いろいろありがとうございました','iroiro arigatō gozaimashita','ee-roh-ee-roh ah-ree-gah-toh go-zai-mash-tah'),
-
-  P('Emergency','Help!','助けて！','tasukete!','tah-soo-keh-teh'),
-  P('Emergency','Please call an ambulance','救急車を呼んでください','kyūkyūsha o yonde kudasai','kyoo-kyoo-shah oh yohn-deh koo-dah-sigh','Dial 119 for ambulance or fire, 110 for police.'),
-  P('Emergency','Where is the hospital?','病院はどこですか？','byōin wa doko desu ka?','byoh-een wah doh-koh dess kah'),
-  P('Emergency','I feel unwell','気分が悪いです','kibun ga warui desu','kee-boon gah wah-roo-ee dess'),
-  P('Emergency','I lost my passport','パスポートをなくしました','pasupōto o nakushimashita','pah-soo-poh-toh oh nah-koo-shee-mash-tah'),
-
-  P('Kobe','Do you have the Kobe beef certificate?','神戸ビーフの証明書はありますか？','Kōbe bīfu no shōmeisho wa arimasu ka?','koh-beh bee-foo noh shoh-may-sho wah ah-ree-mass kah','"Wagyu" signs can mean other beef. Certified places can show a 10-digit ID.'),
-  P('Kobe','Sirloin / tenderloin, please','サーロイン / ヒレでお願いします','sāroin / hire de onegai shimasu','sah-roh-een / hee-reh deh oh-neh-guy shee-mass','For teppanyaki.'),
-  P('Kobe','A dry sake, please','辛口のお酒をください','karakuchi no osake o kudasai','kah-rah-koo-chee noh oh-sah-keh oh koo-dah-sigh','Nada sake is dry by tradition.'),
-  P('Kobe','Which way is the mountain side?','山側はどっちですか？','yama-gawa wa dotchi desu ka?','yah-mah-gah-wah wah dot-chee dess kah','Kobe directions: mountain side is north, sea side (umi-gawa) south.'),
-  P('Kobe','What\'re you up to?','何しとん？','nani shiton?','nah-nee shee-tohn','Kobe-ben, casual. Friends only.'),
-  P('Kobe','Two pork buns, please','豚まん二つください','butaman futatsu kudasai','boo-tah-mahn foo-tah-tsoo koo-dah-sigh','Nankinmachi.'),
-  P('Kobe','Which bakery do you like?','好きなパン屋さんはどこですか？','suki na pan-ya-san wa doko desu ka?','skee nah pahn-yah-sahn wah doh-koh dess kah','Every Kobe local has an answer.'),
-
-  P('Nara','Deer crackers, please','鹿せんべいをください','shika senbei o kudasai','shee-kah sen-bay oh koo-dah-sigh','About ¥200 a bundle.'),
-  P('Nara','I don\'t have any more','もうないよ','mō nai yo','moh nigh yoh','To a deer, with both palms open.'),
-  P('Nara','May I request a goshuin?','御朱印をお願いできますか？','goshuin o onegai dekimasu ka?','go-shoo-een oh oh-neh-guy deh-kee-mass kah','Pray first, then ask.'),
-  P('Nara','How do I get to Tōdai-ji?','東大寺はどう行けばいいですか？','Tōdai-ji wa dō ikeba ii desu ka?','toh-dye-jee wah doh ee-keh-bah ee dess kah'),
-  P('Nara','It was delicious','おいしかったです','oishikatta desu','oy-shee-kaht-tah dess','Nara people joke there\'s nothing tasty here. Prove them wrong.'),
-  P('Nara','Do you have bodaimoto sake?','菩提酛のお酒はありますか？','bodaimoto no osake wa arimasu ka?','boh-dye-moh-toh noh oh-sah-keh wah ah-ree-mass kah','The old temple method, revived by local brewers.'),
-
-  P('Kyoto','Thank you (Kyoto\'s favourite)','おおきに','ōkini','oh-kee-nee'),
-  P('Kyoto','Excuse my intrusion','お邪魔します','o-jama shimasu','oh-jah-mah shee-mass','Entering a home, tea room or tiny shop.'),
-  P('Kyoto','No photography','撮影禁止','satsuei kinshi','sah-tsoo-ay keen-shee','Read it on signs.'),
-  P('Kyoto','Private road','私道','shidō','shee-doh','Read it on signs in Gion. Fines up to ¥10,000.'),
-  P('Kyoto','Matcha, please','抹茶をお願いします','matcha o onegai shimasu','mah-chah oh oh-neh-guy shee-mass'),
-  P('Kyoto','I have a reservation','予約しています','yoyaku shite imasu','yoh-yah-koo shteh ee-mass','Add your name before it.'),
-  P('Kyoto','How beautiful (old Kyoto style)','きれいどすなぁ','kirei dosu nā','kee-ray doh-soo nah','A gentle joke. Say it with a smile.'),
-  P('Kyoto','Can\'t be helped','しゃあない','shā nai','shah nigh','The Kansai shrug.')
-];
-const phraseCats = ['All','Starred', ...new Set(phrases.map(p => p.cat))];
+/* ---------------- My phrases (was Custom Prep in jpphrasebook.html; same storage key) ---------------- */
+let mine = store.get('nihongo_pal_custom_prep', []);
+function saveMine() { store.set('nihongo_pal_custom_prep', mine); }
+function renderMine() {
+  const inp = 'w-full text-sm px-3 py-2 border border-zinc-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-vermilion';
+  $('phraseList').innerHTML = `
+    <div class="flex gap-2">
+      <input id="mineNewSit" type="text" placeholder="New situation, e.g. Hotel laundry" class="${inp}">
+      <button data-action="mineAddSit" class="px-4 bg-zinc-900 text-white rounded-xl text-sm font-semibold flex-shrink-0">Add</button>
+    </div>
+    ${mine.length ? '' : '<div class="text-center py-8 text-sm text-zinc-500 border border-dashed border-zinc-300 rounded-2xl">No situations yet. Add one above, then fill it with phrases you\'ll need.</div>'}
+    ${mine.map(sit => `
+    <div class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 bg-zinc-50 border-b border-zinc-200">
+        <span class="font-bold text-[15px]">${esc(sit.name)}</span>
+        <button data-action="mineDelSit" data-val="${sit.id}" class="text-xs font-semibold text-vermilion">Delete</button>
+      </div>
+      <div class="p-3 space-y-2">
+        ${sit.phrases.map(p => `
+        <div class="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-zinc-100 bg-zinc-50">
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-semibold text-zinc-700">${esc(p.en)}</div>
+            <div class="jp font-bold text-lg text-zinc-900 leading-snug">${esc(p.ja)}</div>
+            ${p.ro ? `<div class="text-sm text-zinc-500 italic">${esc(p.ro)}</div>` : ''}
+            <button data-action="mineShow" data-val="${sit.id}:${p.id}" class="mt-1 text-xs font-semibold text-zinc-600 underline">Show to someone</button>
+          </div>
+          <div class="flex flex-col gap-2 flex-shrink-0">
+            <button data-ja="${esc(p.ja)}" class="w-10 h-10 rounded-full bg-rose-50 text-vermilion border border-rose-100 flex items-center justify-center" aria-label="Play"><svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+            <button data-action="mineDelP" data-val="${sit.id}:${p.id}" class="w-10 h-10 rounded-full border border-zinc-200 bg-white text-zinc-400 text-lg" aria-label="Delete">×</button>
+          </div>
+        </div>`).join('')}
+        <div class="pt-2 space-y-2">
+          <input id="mEn-${sit.id}" type="text" placeholder="English" class="${inp}">
+          <input id="mJa-${sit.id}" type="text" placeholder="Japanese" class="${inp} jp">
+          <div class="flex gap-2">
+            <input id="mRo-${sit.id}" type="text" placeholder="Romaji (optional)" class="${inp}">
+            <button data-action="mineAddP" data-val="${sit.id}" class="px-4 bg-zinc-100 border border-zinc-200 rounded-xl text-sm font-semibold flex-shrink-0">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('')}`;
+  $('phraseEmpty').classList.add('hidden');
+}
 
 /* ---------------- Builder ---------------- */
 const patterns = [
@@ -1251,16 +1213,16 @@ const patterns = [
 ];
 const V = (ja, ro, en, tag) => ({ ja, ro, en, tag });
 const vocab = {
-  places:[ V('お手洗い','otearai','the toilet','Essential'), V('駅','eki','the station','Transit'), V('改札口','kaisatsuguchi','the ticket gate','Transit'), V('バス停','basutei','the bus stop','Transit'), V('コインロッカー','koin rokkā','the coin lockers','Luggage'), V('コンビニ','konbini','a convenience store','Everyday'), V('ATM','ē-tī-emu','an ATM','Money'), V('銭湯','sentō','a public bath','Local'), V('登山口','tozanguchi','the trailhead','Hiking'), V('市場','ichiba','the market','Food') ],
+  places:[ V('お手洗い','otearai','the toilet','Essential'), V('駅','eki','the station','Transit'), V('改札口','kaisatsuguchi','the ticket gate','Transit'), V('バス停','basutei','the bus stop','Transit'), V('コインロッカー','koin rokkā','the coin lockers','Luggage'), V('コンビニ','konbini','a convenience store','Everyday'), V('ATM','ē-tī-emu','an ATM','Money'), V('銭湯','sentō','a public bath','Local'), V('登山口','tozanguchi','the trailhead','Hiking'), V('市場','ichiba','the market','Food'), V('入口','iriguchi','the entrance','Getting in'), V('出口','deguchi','the exit','Getting out') ],
   stations:[ V('梅田','Umeda','Umeda','Osaka north'), V('なんば','Namba','Namba','Osaka south'), V('天王寺','Tennōji','Tennōji','Osaka'), V('新大阪','Shin-Ōsaka','Shin-Osaka','Shinkansen'), V('京都','Kyōto','Kyoto','Kyoto'), V('奈良','Nara','Nara','Nara'), V('三宮','Sannomiya','Sannomiya (Kobe)','Kobe'), V('岸和田','Kishiwada','Kishiwada','Festival'), V('明石','Akashi','Akashi','Inland Sea'), V('姫路','Himeji','Himeji','Festival'), V('箕面','Minō','Minoo','Hiking') ],
-  trips:[ V('高野山','Kōyasan','Kōyasan','Temple stay'), V('熊野本宮大社','Kumano Hongū Taisha','Kumano Hongū Taisha','Pilgrimage'), V('有馬温泉','Arima onsen','Arima Onsen','Onsen'), V('城崎温泉','Kinosaki onsen','Kinosaki Onsen','Onsen'), V('伊根','Ine','Ine','Fishing village'), V('丹波篠山','Tanba-Sasayama','Tamba-Sasayama','Countryside'), V('吉野','Yoshino','Yoshino','Mountains'), V('明日香村','Asuka-mura','Asuka village','History'), V('このホテル','kono hoteru','this hotel (show address)','Stay') ],
+  trips:[ V('高野山','Kōyasan','Kōyasan','Temple stay'), V('熊野本宮大社','Kumano Hongū Taisha','Kumano Hongū Taisha','Pilgrimage'), V('有馬温泉','Arima onsen','Arima Onsen','Onsen'), V('城崎温泉','Kinosaki onsen','Kinosaki Onsen','Onsen'), V('伊根','Ine','Ine','Fishing village'), V('丹波篠山','Tanba-Sasayama','Tamba-Sasayama','Countryside'), V('吉野','Yoshino','Yoshino','Mountains'), V('明日香村','Asuka-mura','Asuka village','History'), V('このホテル','kono hoteru','this hotel (show address)','Stay'), V('神戸','Kōbe','Kobe','City') ],
   nearby:[ V('立ち飲み屋','tachinomiya','standing bar','Social'), V('居酒屋','izakaya','izakaya','Food & drink'), V('銭湯','sentō','public bath','Local'), V('喫茶店','kissaten','old-style café','Morning'), V('お好み焼き屋','okonomiyakiya','okonomiyaki place','Osaka food'), V('神社','jinja','shrine','Quiet'), V('ハイキングコース','haikingu kōsu','hiking trail','Outdoors') ],
   recommend:[ V('お酒','osake','drink','Bar'), V('地酒','jizake','local sake','Bar'), V('料理','ryōri','dish','Restaurant'), V('お店','omise','place to eat','Local tips'), V('場所','basho','spot to visit','Local tips'), V('山','yama','mountain','Outdoors'), V('温泉','onsen','hot spring','Onsen') ],
-  items:[ V('お水','omizu','Water','Dining'), V('生ビール','nama biiru','A draft beer','Dining'), V('お会計','o-kaikei','The bill','Dining'), V('取り皿','torizara','A small sharing plate','Dining'), V('お箸','ohashi','Chopsticks','Dining'), V('英語のメニュー','eigo no menyū','An English menu','Dining'), V('領収書','ryōshūsho','A receipt','Shopping') ],
-  services:[ V('貸切風呂','kashikiri-buro','a private bath','Onsen'), V('荷物預かり','nimotsu azukari','luggage storage','Travel'), V('無料Wi-Fi','muryō waifai','free Wi-Fi','Tech'), V('ベジタリアンメニュー','bejitarian menyū','a vegetarian option','Dining'), V('英語のメニュー','eigo no menyū','an English menu','Dining') ],
+  items:[ V('お水','omizu','Water','Dining'), V('生ビール','nama biiru','A draft beer','Dining'), V('お会計','o-kaikei','The bill','Dining'), V('取り皿','torizara','A small sharing plate','Dining'), V('お箸','ohashi','Chopsticks','Dining'), V('英語のメニュー','eigo no menyū','An English menu','Dining'), V('領収書','ryōshūsho','A receipt','Shopping'), V('袋','fukuro','A bag','Shopping') ],
+  services:[ V('貸切風呂','kashikiri-buro','a private bath','Onsen'), V('荷物預かり','nimotsu azukari','luggage storage','Travel'), V('無料Wi-Fi','muryō waifai','free Wi-Fi','Tech'), V('ベジタリアンメニュー','bejitarian menyū','a vegetarian option','Dining'), V('英語のメニュー','eigo no menyū','an English menu','Dining'), V('免税','menzei','tax-free shopping','Shopping') ],
   actions:[ V('写真を撮って','shashin o totte','take photos','Photos'), V('座って','suwatte','sit','Seating'), V('食べて','tabete','eat','Food'), V('休んで','yasunde','rest','Hiking'), V('カードを使って','kādo o tsukatte','pay by card','Payment'), V('待って','matte','wait','Queue') ],
   products:[ V('これ','kore','this one (near me)','Point'), V('それ','sore','that one (near you)','Point'), V('入浴料','nyūyokuryō','the bath entry','Onsen'), V('一泊','ippaku','one night','Stay'), V('切符','kippu','the ticket','Transit') ],
-  foods:[ V('豚肉','butaniku','pork','Meat'), V('お肉','oniku','meat','Meat'), V('魚','sakana','fish','Seafood'), V('えび','ebi','shrimp','Allergy'), V('卵','tamago','egg','Allergy'), V('乳製品','nyūseihin','dairy','Allergy'), V('そば','soba','buckwheat','Allergy'), V('小麦','komugi','wheat','Allergy'), V('ピーナッツ','pīnattsu','peanuts','Allergy') ],
+  foods:[ V('豚肉','butaniku','pork','Meat'), V('お肉','oniku','meat','Meat'), V('魚','sakana','fish','Seafood'), V('えび','ebi','shrimp','Allergy'), V('卵','tamago','egg','Allergy'), V('乳製品','nyūseihin','dairy','Allergy'), V('そば','soba','buckwheat','Allergy'), V('小麦','komugi','wheat','Allergy'), V('ピーナッツ','pīnattsu','peanuts','Allergy'), V('魚介類','gyokairui','seafood','Allergy'), V('出汁','dashi','fish stock (dashi)','Hidden fish') ],
   origins:[ V('オーストラリア','Ōsutoraria','Australia','Oceania'), V('ニュージーランド','Nyūjīrando','New Zealand','Oceania'), V('イギリス','Igirisu','the UK','Europe'), V('アメリカ','Amerika','the US','Americas'), V('カナダ','Kanada','Canada','Americas') ],
   likes:[ V('日本食','nihonshoku','Japanese food','Food'), V('大阪','Ōsaka','Osaka','Place'), V('温泉','onsen','hot springs','Onsen'), V('山登り','yamanobori','hiking','Outdoors'), V('お祭り','omatsuri','festivals','Culture'), V('日本酒','nihonshu','sake','Drink'), V('木工','mokkō','woodwork','Craft'), V('歴史','rekishi','history','Culture') ]
 };
@@ -1352,7 +1314,7 @@ function phraseCard(p) {
   return `<div class="bg-white rounded-2xl p-4 border border-zinc-200 shadow-sm">
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0 flex-1">
-        <span class="inline-block px-2 py-0.5 bg-zinc-100 text-[10px] font-bold text-zinc-500 rounded uppercase tracking-wider mb-1.5">${p.cat}</span>
+        <span class="inline-block px-2 py-0.5 bg-zinc-100 text-[10px] font-bold text-zinc-500 rounded uppercase tracking-wider mb-1.5">${p.cat}${p.ctx ? ` · ${esc(p.ctx)}` : ''}</span>
         <div class="text-sm font-semibold text-zinc-700">${esc(p.en)}</div>
         <div class="jp font-bold text-xl text-zinc-900 mt-1 leading-snug">${p.ja}</div>
         <div class="text-sm text-zinc-500 italic">${esc(p.ro)}</div>
@@ -1368,13 +1330,25 @@ function phraseCard(p) {
   </div>`;
 }
 function renderPhrases() {
+  if (phraseCat === 'My phrases') return renderMine();
   const q = phraseQuery.trim().toLowerCase();
   const list = phrases.filter(p =>
     (phraseCat === 'All' || (phraseCat === 'Starred' ? starred.has(p.id) : p.cat === phraseCat)) &&
-    (!q || p.en.toLowerCase().includes(q) || p.ro.toLowerCase().includes(q) || p.ja.includes(phraseQuery.trim()) || p.note.toLowerCase().includes(q)));
-  $('phraseList').innerHTML = list.map(phraseCard).join('');
+    (!q || p.en.toLowerCase().includes(q) || p.ro.toLowerCase().includes(q) || p.ja.includes(phraseQuery.trim()) || p.note.toLowerCase().includes(q) || p.ctx.toLowerCase().includes(q)));
+  // One category, no search: show its groups (e.g. Dining's venue types) under headings, single words last.
+  if (!['All', 'Starred'].includes(phraseCat) && !q && list.some(p => p.group)) {
+    const order = [], by = {};
+    list.filter(p => p.ctx !== 'Word').forEach(p => { const k = p.group; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(p); });
+    const words = list.filter(p => p.ctx === 'Word');
+    const head = (icon, title, sub) => `<div class="flex items-baseline gap-2 pt-3 pb-0.5">${icon ? `<span>${icon}</span>` : ''}<span class="text-sm font-bold text-zinc-900">${title}</span>${sub ? `<span class="text-xs text-zinc-400">${sub}</span>` : ''}</div>`;
+    $('phraseList').innerHTML = order.map(k => { const m = groupMeta[k] || {}; return (k ? head(m.icon, esc(k), m.sub) : '') + by[k].map(phraseCard).join(''); }).join('')
+      + (words.length ? head('📖', 'Useful vocabulary') + words.map(phraseCard).join('') : '');
+  } else {
+    $('phraseList').innerHTML = list.map(phraseCard).join('');
+  }
   $('phraseEmpty').classList.toggle('hidden', list.length > 0);
-  if (phraseCat === 'Starred' && !list.length) $('phraseEmpty').textContent = 'Tap ☆ on any phrase to save it here.';
+  if (phrasesFailed) $('phraseEmpty').textContent = 'Couldn\'t load the phrases. Open the app once with signal and they\'ll be saved for offline use.';
+  else if (phraseCat === 'Starred' && !list.length) $('phraseEmpty').textContent = 'Tap ☆ on any phrase to save it here.';
   else $('phraseEmpty').textContent = 'Nothing matches. Try another word.';
 }
 function toggleStar(id) {
@@ -1426,7 +1400,7 @@ function buildQueue() {
   pRevealed = false; renderCard();
 }
 function renderDeckChips() {
-  $('deckChips').innerHTML = phraseCats.map(c => chip(c === 'Starred' ? `★ Starred (${starred.size})` : c, c === pDeck, 'deck', c)).join('');
+  $('deckChips').innerHTML = phraseCats.filter(c => c !== 'My phrases').map(c => chip(c === 'Starred' ? `★ Starred (${starred.size})` : c, c === pDeck, 'deck', c)).join('');
   ['recall','listen'].forEach(m => { const b = $('mode-' + m); b.className = 'flex-1 py-1.5 text-sm font-semibold rounded-lg transition ' + (m === pMode ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500'); });
 }
 function renderCard() {
@@ -1488,8 +1462,17 @@ document.addEventListener('click', e => {
     }
     case 'city': setGroup(val); $('view-guide').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
     case 'pcat': phraseCat = val; renderPhraseCats(); renderPhrases(); break;
-    case 'star': toggleStar(+val); break;
-    case 'pshow': { const p = phrases.find(x => x.id === +val); openShow(p.ja, p.ro, p.en); break; }
+    case 'star': toggleStar(val); break;
+    case 'pshow': { const p = phrases.find(x => x.id === val); openShow(p.ja, p.ro, p.en); break; }
+    case 'mineAddSit': { const i = $('mineNewSit'), name = i.value.trim(); if (!name) break; mine.unshift({ id: Date.now(), name, phrases: [] }); saveMine(); renderMine(); break; }
+    case 'mineDelSit': if (confirm('Delete this situation and its phrases?')) { mine = mine.filter(x => x.id !== +val); saveMine(); renderMine(); } break;
+    case 'mineAddP': {
+      const en = $('mEn-' + val).value.trim(), ja = $('mJa-' + val).value.trim(), ro = $('mRo-' + val).value.trim();
+      if (!en || !ja) { toast('Add both the English and the Japanese.'); break; }
+      mine.find(x => x.id === +val).phrases.push({ id: Date.now(), en, ja, ro }); saveMine(); renderMine(); break;
+    }
+    case 'mineDelP': { const [sid, pid] = val.split(':').map(Number), sit = mine.find(x => x.id === sid); sit.phrases = sit.phrases.filter(x => x.id !== pid); saveMine(); renderMine(); break; }
+    case 'mineShow': { const [sid, pid] = val.split(':').map(Number), p = mine.find(x => x.id === sid).phrases.find(x => x.id === pid); openShow(p.ja, p.ro, p.en); break; }
     case 'pattern': pIdx = +val; vIdx = 0; renderBuilder(); break;
     case 'vocab': vIdx = +val; renderBuilder(); speak(bCurrent().ja, $('bPlay')); break;
     case 'bSpeak': speak(bCurrent().ja, act); break;
@@ -1518,7 +1501,11 @@ function init() {
   renderDeckChips();
   $('hideKnown').addEventListener('change', () => { buildQueue(); showCardStart(); });
   if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
-  switchTab(store.get('tab', 'guide'));
+  switchTab(location.hash === '#phrases' ? 'phrases' : store.get('tab', 'guide'));
+  loadPhrases().then(() => {
+    if (!phrasesFailed) migrateSaved();
+    renderPhraseCats(); renderPhrases(); renderDeckChips(); buildQueue();
+  });
 
   // Offline support: cache this page and its libraries after the first visit.
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
@@ -1526,6 +1513,8 @@ function init() {
       if (!('caches' in window)) return;
       caches.open('kotoba-v1').then(c => {
         c.add(location.href.split('#')[0]).catch(() => {});
+        c.add('phrases.json').catch(() => {});
+        ['icon.svg', 'apple-touch-icon.png', 'manifest.webmanifest'].forEach(u => c.add(u).catch(() => {}));
         ['https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap'
         ].forEach(u => fetch(u, { mode: 'no-cors' }).then(r => c.put(u, r)).catch(() => {}));
       });
